@@ -1,23 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>BTMDialogBase</class>
- <widget class="QDialog" name="BTMDialogBase">
+ <class>removeRasterValuesDialogBase</class>
+ <widget class="QDialog" name="removeRasterValuesDialogBase">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>873</width>
-    <height>612</height>
+    <width>857</width>
+    <height>448</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Benthic Terrain Modeler</string>
+   <string>Alter Raster Values</string>
+  </property>
+  <property name="toolTip">
+   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
   </property>
   <widget class="QDialogButtonBox" name="button_box">
    <property name="geometry">
     <rect>
-     <x>430</x>
-     <y>550</y>
+     <x>400</x>
+     <y>390</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -35,205 +38,13 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QLabel" name="label">
+  <widget class="QRadioButton" name="outLiersButton">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>40</y>
-     <width>221</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Bathymetry Raster input</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="BroadInner">
-   <property name="geometry">
-    <rect>
-     <x>750</x>
+     <x>150</x>
      <y>90</y>
-     <width>41</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-   <property name="placeholderText">
-    <string>5</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="BroadOuter">
-   <property name="geometry">
-    <rect>
-     <x>750</x>
-     <y>140</y>
-     <width>41</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-   <property name="placeholderText">
-    <string>50</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>530</x>
-     <y>100</y>
-     <width>201</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Broad-scale BPI inner radius</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_3">
-   <property name="geometry">
-    <rect>
-     <x>530</x>
-     <y>150</y>
-     <width>191</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Broad-scale BPI outer radius</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="FineInner">
-   <property name="geometry">
-    <rect>
-     <x>750</x>
-     <y>190</y>
-     <width>41</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-   <property name="placeholderText">
-    <string>2</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_4">
-   <property name="geometry">
-    <rect>
-     <x>530</x>
-     <y>250</y>
-     <width>201</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Fine-scale BPI outer radius</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="FineOuter">
-   <property name="geometry">
-    <rect>
-     <x>750</x>
-     <y>240</y>
-     <width>41</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-   <property name="placeholderText">
-    <string>10</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_5">
-   <property name="geometry">
-    <rect>
-     <x>530</x>
-     <y>200</y>
-     <width>201</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Fine-scale BPI inner radius</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_6">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>300</y>
-     <width>221</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Classification Dictionary (optional)</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="Dictionary">
-   <property name="geometry">
-    <rect>
-     <x>250</x>
-     <y>290</y>
-     <width>541</width>
-     <height>41</height>
+     <width>141</width>
+     <height>18</height>
     </rect>
    </property>
    <property name="font">
@@ -242,16 +53,153 @@
      <pointsize>10</pointsize>
     </font>
    </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   <property name="text">
+    <string>Remove Outliers</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="DictFile">
+  <widget class="QRadioButton" name="singleButton">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>150</y>
+     <width>221</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Remove Single Value</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="nullButton">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>210</y>
+     <width>241</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Change Null to Single Value</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>490</x>
+     <y>210</y>
+     <width>131</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Value to change to </string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>500</x>
+     <y>150</y>
+     <width>121</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Value to remove</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>90</y>
+     <width>81</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Higher Than</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>350</x>
+     <y>90</y>
+     <width>81</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Lower Than</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="inputRaster">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>10</y>
+     <width>591</width>
+     <height>41</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="outputRaster">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>320</y>
+     <width>591</width>
+     <height>41</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="inButton">
    <property name="geometry">
     <rect>
      <x>800</x>
-     <y>290</y>
-     <width>51</width>
+     <y>10</y>
+     <width>41</width>
      <height>41</height>
     </rect>
    </property>
@@ -259,31 +207,12 @@
     <string>...</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="OutputRaster">
-   <property name="geometry">
-    <rect>
-     <x>250</x>
-     <y>350</y>
-     <width>541</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Arial</family>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="OutFileRaster">
+  <widget class="QPushButton" name="outButton">
    <property name="geometry">
     <rect>
      <x>800</x>
-     <y>350</y>
-     <width>51</width>
+     <y>320</y>
+     <width>41</width>
      <height>41</height>
     </rect>
    </property>
@@ -294,59 +223,89 @@
   <widget class="QLabel" name="label_7">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>360</y>
+     <x>10</x>
+     <y>330</y>
      <width>171</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
    <property name="font">
     <font>
+     <family>Arial</family>
      <pointsize>10</pointsize>
     </font>
    </property>
    <property name="text">
-    <string>Output Zones Raster</string>
+    <string>Output Raster Imagery</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>20</y>
+     <width>161</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Input Raster Imagery</string>
+   </property>
+   <property name="textFormat">
+    <enum>Qt::PlainText</enum>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="rangeButton">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>270</y>
+     <width>181</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Remove Range of values</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>590</x>
+     <y>270</y>
+     <width>47</width>
+     <height>14</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>End</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_8">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>500</y>
-     <width>171</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Output Zones Polygons</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="OutFilePoly">
-   <property name="geometry">
-    <rect>
-     <x>800</x>
-     <y>490</y>
-     <width>51</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>...</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="OutputPoly">
-   <property name="geometry">
-    <rect>
-     <x>250</x>
-     <y>490</y>
-     <width>541</width>
-     <height>41</height>
+     <x>400</x>
+     <y>270</y>
+     <width>47</width>
+     <height>14</height>
     </rect>
    </property>
    <property name="font">
@@ -355,95 +314,141 @@
      <pointsize>10</pointsize>
     </font>
    </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="DeleteInter">
-   <property name="geometry">
-    <rect>
-     <x>360</x>
-     <y>410</y>
-     <width>411</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="layoutDirection">
-    <enum>Qt::RightToLeft</enum>
-   </property>
    <property name="text">
-    <string>Delete Intermediate files? (to be held in directory \tempMT)</string>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
+    <string>Start</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="InvertDepths">
+  <widget class="QLineEdit" name="startInput1">
    <property name="geometry">
     <rect>
-     <x>360</x>
-     <y>450</y>
-     <width>411</width>
-     <height>20</height>
+     <x>450</x>
+     <y>260</y>
+     <width>113</width>
+     <height>26</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="layoutDirection">
-    <enum>Qt::RightToLeft</enum>
-   </property>
-   <property name="text">
-    <string>Invert Depths? (depths should be positive for this model)        </string>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="BathyInput">
-   <property name="geometry">
-    <rect>
-     <x>250</x>
-     <y>30</y>
-     <width>541</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Arial</family>
      <pointsize>10</pointsize>
     </font>
    </property>
    <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    <set>Qt::AlignCenter</set>
+   </property>
+   <property name="placeholderText">
+    <string>-9999</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="InputFile">
+  <widget class="QLineEdit" name="endInput1">
    <property name="geometry">
     <rect>
-     <x>800</x>
-     <y>30</y>
-     <width>51</width>
-     <height>41</height>
+     <x>630</x>
+     <y>260</y>
+     <width>113</width>
+     <height>26</height>
     </rect>
    </property>
-   <property name="text">
-    <string>...</string>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+   <property name="placeholderText">
+    <string>9999</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="nullInput1">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>210</y>
+     <width>113</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+   <property name="placeholderText">
+    <string>0</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="singleInput1">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>150</y>
+     <width>113</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+   <property name="placeholderText">
+    <string>0</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lowestInput1">
+   <property name="geometry">
+    <rect>
+     <x>420</x>
+     <y>90</y>
+     <width>113</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+   <property name="placeholderText">
+    <string>-9999</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="highestInput1">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>90</y>
+     <width>113</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+   <property name="placeholderText">
+    <string>9999</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_9">
    <property name="geometry">
     <rect>
-     <x>800</x>
-     <y>540</y>
+     <x>780</x>
+     <y>370</y>
      <width>61</width>
      <height>61</height>
     </rect>
@@ -458,8 +463,8 @@
   <widget class="QPushButton" name="helpButton">
    <property name="geometry">
     <rect>
-     <x>480</x>
-     <y>550</y>
+     <x>450</x>
+     <y>390</y>
      <width>93</width>
      <height>29</height>
     </rect>
@@ -474,30 +479,11 @@
     <string>Help</string>
    </property>
   </widget>
-  <widget class="QLabel" name="exists2">
-   <property name="geometry">
-    <rect>
-     <x>70</x>
-     <y>380</y>
-     <width>171</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="scaledContents">
-    <bool>true</bool>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-   </property>
-  </widget>
   <widget class="QLabel" name="exists1">
    <property name="geometry">
     <rect>
-     <x>70</x>
-     <y>520</y>
+     <x>200</x>
+     <y>360</y>
      <width>171</width>
      <height>20</height>
     </rect>
@@ -518,7 +504,7 @@
   <connection>
    <sender>button_box</sender>
    <signal>accepted()</signal>
-   <receiver>BTMDialogBase</receiver>
+   <receiver>removeRasterValuesDialogBase</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -534,7 +520,7 @@
   <connection>
    <sender>button_box</sender>
    <signal>rejected()</signal>
-   <receiver>BTMDialogBase</receiver>
+   <receiver>removeRasterValuesDialogBase</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

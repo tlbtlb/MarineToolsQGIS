@@ -23,13 +23,11 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction,QFileDialog # added
+from qgis.PyQt.QtWidgets import QAction,QFileDialog, QMessageBox # added
 from qgis.core import QgsProject # added
 
-# Initialize Qt resources from file resources.py
-from .resources import *
 # Import the code for the dialog
-from .BTM_dialog import BTMDialog
+#from .BTM_dialog import BTMDialog
 import os.path
 from qgis.core import Qgis,QgsMessageLog
 from qgis.gui import QgsMessageBar
@@ -56,213 +54,53 @@ import shutil
 class BTM:
     """QGIS Plugin Implementation."""
 
-    def __init__(self, iface):
-        """Constructor.
-
-        :param iface: An interface instance that will be passed to this class
-            which provides the hook by which you can manipulate the QGIS
-            application at run time.
-        :type iface: QgsInterface
-        """
-        # Save reference to the QGIS interface
-        self.iface = iface
-        # initialize plugin directory
-        self.plugin_dir = os.path.dirname(__file__)
-        # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
-        locale_path = os.path.join(
-            self.plugin_dir,
-            'i18n',
-            'BTM_{}.qm'.format(locale))
-
-        if os.path.exists(locale_path):
-            self.translator = QTranslator()
-            self.translator.load(locale_path)
-            QCoreApplication.installTranslator(self.translator)
-
-        # Declare instance attributes
-        self.actions = []
-        self.menu = self.tr(u'&Marine Tools')
-
-        # Check if plugin was started the first time in current QGIS session
-        # Must be set in initGui() to survive plugin reloads
-        self.first_start = None
-
-        # noinspection PyMethodMayBeStatic
-    def tr(self, message):
-        """Get the translation for a string using Qt translation API.
-
-        We implement this ourselves since we do not inherit QObject.
-
-        :param message: String for translation.
-        :type message: str, QString
-
-        :returns: Translated version of message.
-        :rtype: QString
-        """
-        # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('BTM', message)
-
-
-    def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
-        """Add a toolbar icon to the toolbar.
-
-        :param icon_path: Path to the icon for this action. Can be a resource
-            path (e.g. ':/plugins/foo/bar.png') or a normal file system path.
-        :type icon_path: str
-
-        :param text: Text that should be shown in menu items for this action.
-        :type text: str
-
-        :param callback: Function to be called when the action is triggered.
-        :type callback: function
-
-        :param enabled_flag: A flag indicating if the action should be enabled
-            by default. Defaults to True.
-        :type enabled_flag: bool
-
-        :param add_to_menu: Flag indicating whether the action should also
-            be added to the menu. Defaults to True.
-        :type add_to_menu: bool
-
-        :param add_to_toolbar: Flag indicating whether the action should also
-            be added to the toolbar. Defaults to True.
-        :type add_to_toolbar: bool
-
-        :param status_tip: Optional text to show in a popup when mouse pointer
-            hovers over the action.
-        :type status_tip: str
-
-        :param parent: Parent widget for the new action. Defaults None.
-        :type parent: QWidget
-
-        :param whats_this: Optional text to show in the status bar when the
-            mouse pointer hovers over the action.
-
-        :returns: The action that was created. Note that the action is also
-            added to self.actions list.
-        :rtype: QAction
-        """
-
-        icon = QIcon(icon_path)
-        action = QAction(icon, text, parent)
-        action.triggered.connect(callback)
-        action.setEnabled(enabled_flag)
-
-        if status_tip is not None:
-            action.setStatusTip(status_tip)
-
-        if whats_this is not None:
-            action.setWhatsThis(whats_this)
-
-        if add_to_toolbar:
-            # Adds plugin icon to Plugins toolbar
-            self.iface.addToolBarIcon(action)
-
-        if add_to_menu:
-            self.iface.addPluginToMenu(
-                self.menu,
-                action)
-
-        self.actions.append(action)
-
-        return action
-
-    def initGui(self):
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
-        icon_path = ':/plugins/BTM/icon.png'
-        self.add_action(
-            icon_path,
-            text=self.tr(u'BTM'),
-            callback=self.run,
-            parent=self.iface.mainWindow())
-
-        # will be set False in run()
-        self.first_start = True
-
-
-    def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
-        for action in self.actions:
-            self.iface.removePluginRasterMenu(
-                self.tr(u'&Benthic Terrain Modeler'),
-                action)
-            self.iface.removeToolBarIcon(action)
-
-    def select_input_file(self): # added
-        filename, _filter = QFileDialog.getOpenFileName(self.dlg, "Select input raster Bathymetry file ","", '*.*') # added
+    def select_input_file(self): 
+        filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input raster Bathymetry file ","", '*.img *.tif') # added
         autoPoly = filename[:-4]+"_BTM.shp"
-        self.dlg.OutputPoly.setText(autoPoly)
         autorast = filename[:-4]+"_zones.img"
-        self.dlg.OutputRaster.setText(autorast)
-        self.dlg.BathyInput.setText(filename) # added
-        
+        selfMT.dlg.OutputPoly.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
+        selfMT.dlg.OutputRaster.setText(autorast)
+        if os.path.exists(autorast):
+            selfMT.dlg.exists2.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists2.setText("")
+        selfMT.dlg.BathyInput.setText(filename) # added
+       
     def select_dictionary_file(self): # added
-        filename, _filter = QFileDialog.getOpenFileName(self.dlg, "Select classification dictionary file ","", '*.csv') # added
-        self.dlg.Dictionary.setText(filename) # added
+        filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select classification dictionary file ","", '*.csv') # added
+        selfMT.dlg.Dictionary.setText(filename) # added
         
     def select_outputRaster_file(self): # added
-        filename, _filter = QFileDialog.getSaveFileName(self.dlg, "Select output raster zones file ","", '*.img') # added
-        self.dlg.OutputRaster.setText(filename) # added
+        filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output raster zones file ","", '*.img') # added
+        selfMT.dlg.OutputRaster.setText(filename) # added
+        if os.path.exists(filename):
+            selfMT.dlg.exists2.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists2.setText("")
         
     def select_outputPoly_file(self): # added
-        filename, _filter = QFileDialog.getSaveFileName(self.dlg, "Select output polygon file ","", '*.shp') # added
-        self.dlg.OutputPoly.setText(filename) # added
+        filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output polygon file ","", '*.shp') # added
+        selfMT.dlg.OutputPoly.setText(filename) # added
+        if os.path.exists(filename):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
         
-    def colour_polygons_random(self,layer):
-        # provide file name index and field's unique values
-        from random import randrange
-
-        layer = iface.activeLayer()
-        fni = layer.fields().indexFromName('VALUE')
-        unique_values = layer.uniqueValues(fni)
-
-        # fill categories
-        categories = []
-        for unique_value in unique_values:
-            # initialize the default symbol for this geometry type
-            symbol = QgsSymbol.defaultSymbol(layer.geometryType())
-            # configure a symbol layer
-            layer_style = {}
-            layer_style['color'] = '%d, %d, %d' % (randrange(0, 256), randrange(0, 256), randrange(0, 256))
-            layer_style['outline'] = '#000000'
-            symbol_layer = QgsSimpleFillSymbolLayer.create(layer_style)
-            # replace default symbol layer with the configured one
-            if symbol_layer is not None:
-                symbol.changeSymbolLayer(0, symbol_layer)
-            # create renderer object
-            category = QgsRendererCategory(unique_value, symbol, str(unique_value))
-            # entry for the list of category items
-            categories.append(category)
-        # create renderer object
-        renderer = QgsCategorizedSymbolRenderer('VALUE', categories)
-
-        # assign the created renderer to the layer
-        if renderer is not None:
-            layer.setRenderer(renderer)
-
-        layer.triggerRepaint()
-
-    def remove_tif_file(self,tempfilename):
-        import glob,os
-        templayer = QgsRasterLayer(tempfilename,"templayer")
-        QgsProject.instance().addMapLayer(templayer, False)
-        QgsProject.instance().removeMapLayer(templayer.id())
-        for f in glob.glob(tempfilename.replace(".tif",".*")):
-            os.remove(f)
-        return
-         
+    def help(self): 
+        import webbrowser
+        import marinetools
+        MThelp = os.path.dirname(marinetools.__file__) + "\\btm\\BTM.pdf"
+        webbrowser.open(MThelp)
+        
+    def otbInstall(self):
+        import webbrowser
+        import marinetools
+        MThelp = os.path.dirname(marinetools.__file__) + "\\obia\\OTBinstall.pdf"
+        webbrowser.open(MThelp)
 
     def run(self):
         """Run method that performs all the real work"""
@@ -270,51 +108,65 @@ class BTM:
         import random
         import shutil
         import math
-
+        import marinetools
+        from marinetools.btm.BTM_dialog import BTMDialog
+        global selfMT
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
+        self.first_start = True
         if self.first_start == True:
             self.first_start = False
             self.dlg = BTMDialog()
-            self.dlg.InputFile.clicked.connect(self.select_input_file) # added
-            self.dlg.DictFile.clicked.connect(self.select_dictionary_file) # added
-            self.dlg.OutFileRaster.clicked.connect(self.select_outputRaster_file) # added
-            self.dlg.OutFilePoly.clicked.connect(self.select_outputPoly_file) # added
+            selfMT = self
+            self.dlg.InputFile.clicked.connect(BTM.select_input_file) # added
+            self.dlg.DictFile.clicked.connect(BTM.select_dictionary_file) # added
+            self.dlg.OutFileRaster.clicked.connect(BTM.select_outputRaster_file) # added
+            self.dlg.OutFilePoly.clicked.connect(BTM.select_outputPoly_file) # added
+            self.dlg.helpButton.clicked.connect(BTM.help) 
         # Fetch the currently loaded layers
         layers = QgsProject.instance().layerTreeRoot().children() # added
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
         result = self.dlg.exec_()
-        
-        bathy                 = self.dlg.BathyInput.text()  # parameters[0]
-        out_dictionary        = self.dlg.Dictionary.text()  # parameters[5]
-        output_zones          = self.dlg.OutputRaster.text()  # parameters[6]
-        output_zones_Poly     = self.dlg.OutputPoly.text()  # parameters[9]
-        broad_bpi_inner_radius=self.dlg.BroadInner.text() # parameters[1].valueAsText,
-        broad_bpi_outer_radius=self.dlg.BroadOuter.text() # parameters[2].valueAsText,
-        fine_bpi_inner_radius =self.dlg.FineInner.text()  # parameters[3].valueAsText,
-        fine_bpi_outer_radius =self.dlg.FineOuter.text()  # parameters[4].valueAsText,
-        if self.dlg.DeleteInter.isChecked() == True:
-            DeleteInter=1
-        else:
-            DeleteInter=0
-        if self.dlg.InvertDepths.isChecked() == True:
-            InvertDepths=1
-        else:
-            InvertDepths=0
 
-        if broad_bpi_inner_radius == "":
-            broad_bpi_inner_radius = "5"
-        if broad_bpi_outer_radius == "":
-            broad_bpi_outer_radius = "50"
-        if fine_bpi_inner_radius == "":
-            fine_bpi_inner_radius = "2"
-        if fine_bpi_outer_radius == "":
-            fine_bpi_outer_radius = "10"
- 
         # See if OK was pressed
         if result:
+            bathy                 = self.dlg.BathyInput.text()  
+            out_dictionary        = self.dlg.Dictionary.text()  
+            output_zones          = self.dlg.OutputRaster.text()  
+            output_zones_Poly     = self.dlg.OutputPoly.text()  
+            broad_bpi_inner_radius=self.dlg.BroadInner.text() 
+            broad_bpi_outer_radius=self.dlg.BroadOuter.text() 
+            fine_bpi_inner_radius =self.dlg.FineInner.text()  
+            fine_bpi_outer_radius =self.dlg.FineOuter.text()
+            try:
+                processing.run("otb:ImageEnvelope", {'in':bathy,'out':'TEMPORARY_OUTPUT','sr':0,'elev.dem':'','elev.geoid':'','elev.default':0,'proj':''})
+            except:
+                QMessageBox.information(None, "Information:", "This tool requires (OrfeoToolBox (OTB) to be installed\nDownload from https://www.orfeo-toolbox.org/download/\n and install locally.")
+                BTM.otbInstall(self)
+                return
+            if os.path.exists(output_zones):
+                os.remove(output_zones)
+            if os.path.exists(output_zones_Poly):
+                os.remove(output_zones_Poly)
+            if self.dlg.DeleteInter.isChecked() == True:
+                DeleteInter=1
+            else:
+                DeleteInter=0
+            if self.dlg.InvertDepths.isChecked() == True:
+                InvertDepths=1
+            else:
+                InvertDepths=0
+
+            if broad_bpi_inner_radius == "":
+                broad_bpi_inner_radius = "5"
+            if broad_bpi_outer_radius == "":
+                broad_bpi_outer_radius = "50"
+            if fine_bpi_inner_radius == "":
+                fine_bpi_inner_radius = "2"
+            if fine_bpi_outer_radius == "":
+                fine_bpi_outer_radius = "10"
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             print(str(bathy))
@@ -332,10 +184,10 @@ class BTM:
             basePath = str(os.path.dirname(bathy))
             if str(out_dictionary) == "":
                 
-                if not os.path.exists(str(basePath) + r"\tmpBTMfiles"):
-                    os.makedirs(str(basePath) + r"\tmpBTMfiles")
-                out_dictionary = str(basePath) + r"\tmpBTMfiles\temporary_dictionary.csv"
-                tempfile = str(basePath) + r"\tmpBTMfiles\tmpoutputpoints.img"
+                if not os.path.exists(str(basePath) + r"\tempMT"):
+                    os.makedirs(str(basePath) + r"\tempMT")
+                out_dictionary = str(basePath) + r"\tempMT\temporary_dictionary.csv"
+                tempfile = str(basePath) + r"\tempMT\tmpoutputpoints.img"
                 
                 stats = processing.run("native:rasterlayerstatistics", {'INPUT':str(bathy),'BAND':1})
                 InputMean = stats["MEAN"]
@@ -370,26 +222,9 @@ class BTM:
                 file.close() 
                 rememberDict = basePath + r"\Dictionary.csv"
                 shutil.copyfile(out_dictionary,rememberDict)
-                #self.iface.messageBar().pushMessage("\nA default dictionary (.csv) has been created using standard dividers and using the average slope and average depth as " +
-                #                 "a way of dividing the zones.  \n")
-                #self.iface.messageBar().pushMessage("The division of zones looks like this:\n")
-                #self.iface.messageBar().pushMessage("Class,Zone,BroadBPI_Lower,BroadBPI_Upper,FineBPI_Lower,FineBPI_Upper,Slope_Lower,Slope_Upper,Depth_Lower,Depth_Upper") 
-                #self.iface.messageBar().pushMessage("1,Peak,-10000,-100,-10000,-100,0,90,0,12000") 
-                #self.iface.messageBar().pushMessage("2,Ridge,-10000,-100,-100,100,0,90,0,12000") 
-                #self.iface.messageBar().pushMessage("3,Ridge Trough,-10000,-100,100,10000,0,90,0,12000") 
-                #self.iface.messageBar().pushMessage("4,Flat with Ridge,-100,100,-10000,-100,0,90,0,12000") 
-                #self.iface.messageBar().pushMessage("5,Flat with Trough,-100,100,100,10000,0,90,0,12000") 
-                #self.iface.messageBar().pushMessage("6,Flat (Deeper),-100,100,-100,100,0,"+str(SlopeMean)+","+str(InputMean)+",12000") 
-                #self.iface.messageBar().pushMessage("7,Flat (Shallower),-100,100,-100,100,0,"+str(SlopeMean)+",0,"+str(InputMean)) 
-                #self.iface.messageBar().pushMessage("8,Steep (Deeper),-100,100,-100,100,"+str(SlopeMean)+",90,"+str(InputMean)+",12000") 
-                #self.iface.messageBar().pushMessage("9,Steep (Shallower),-100,100,-100,100,"+str(SlopeMean)+",90,0,"+str(InputMean)) 
-                #self.iface.messageBar().pushMessage("10,Depression with Ridge,100,10000,-10000,-100,0,90,0,12000") 
-                #self.iface.messageBar().pushMessage("11,Depression,100,10000,-100,100,0,90,0,12000") 
-                #self.iface.messageBar().pushMessage("12,Depression with Trough,100,10000,100,10000,0,90,0,12000\n") 
-                #self.iface.messageBar().pushMessage("If you wish to alter these values copy and paste them into a file and edit. New zones can be created if desired.\n\n") 
-                self.remove_tif_file(tempfile)
+                BTM.remove_img_file(tempfile)
                 
-            self.runMod(
+            BTM.runMod(
                 input_bathymetry      =str(bathy),
                 broad_bpi_inner_radius=str(broad_bpi_inner_radius),
                 broad_bpi_outer_radius=str(broad_bpi_outer_radius),
@@ -402,15 +237,15 @@ class BTM:
             
             alphabet = 'ZYXWVUTSRQPONMLKJIHGFEDCBA0987654321'
             rand = alphabet[random.randint(1,25)] + alphabet[random.randint(1,35)] + alphabet[random.randint(1,35)] + alphabet[random.randint(1,35)]
-            temp3 =basePath + "/tmpBTMfiles/RAsieve.tif"
-            temp4 =basePath + "/tmpBTMfiles/VCpolygons"+rand+".shp"
-            temp5 =basePath + "/tmpBTMfiles/VGaggregate"+rand+".shp"
-            temp6 =basePath + "/tmpBTMfiles/VTaddfield"+rand+".shp"
+            temp3 =basePath + "/tempMT/RAsieve.tif"
+            temp4 =basePath + "/tempMT/VCpolygons"+rand+".shp"
+            temp5 =basePath + "/tempMT/VGaggregate"+rand+".shp"
+            temp6 =basePath + "/tempMT/VTaddfield"+rand+".shp"
             MinSize=10
             power = math.log(int(MinSize),2)+1.0 # Increments of power of two sizes
             first = str(output_zones)
             for x in range(1,int(power)):
-                next=basePath + "/tmpBTMfiles/RAsieve"+str(x)+".tif"
+                next=basePath + "/tempMT/RAsieve"+str(x)+".tif"
                 Size = 2**x
                 processing.run("gdal:sieve", {'INPUT':first,'THRESHOLD':Size,'EIGHT_CONNECTEDNESS':False,
                                               'NO_MASK':False,'MASK_LAYER':None,'EXTRA':'','OUTPUT':next})
@@ -418,7 +253,7 @@ class BTM:
                 first = next
             processing.run("gdal:sieve", {'INPUT':first,'THRESHOLD':MinSize,'EIGHT_CONNECTEDNESS':False,
                                           'NO_MASK':False,'MASK_LAYER':None,'EXTRA':'','OUTPUT':temp3})
-            self.remove_tif_files(first)
+            BTM.remove_tif_files(first)
 
             processing.run("native:pixelstopolygons", {'INPUT_RASTER':temp3,'RASTER_BAND':1,'FIELD_NAME':'VALUE','OUTPUT':temp4})
             self.iface.messageBar().pushMessage("Make polygons")
@@ -426,9 +261,9 @@ class BTM:
                                                 'AGGREGATES':[{'aggregate': 'mean','delimiter': ',','input': '"VALUE"','length': 20,'name': 'VALUE','precision': 8,'sub_type': 0,'type': 6,'type_name': 'double precision'}],
                                                 'OUTPUT':temp5})
 
-            temp7 =basePath + "/tmpBTMfiles/VTaddfield"+rand+".xlsx"
-            temp8 =basePath + "/tmpBTMfiles/VTaddfield2"+rand+".shp"
-            temp9 =basePath + "/tmpBTMfiles/VTaddfield3"+rand+".shp"
+            temp7 =basePath + "/tempMT/VTaddfield"+rand+".xlsx"
+            temp8 =basePath + "/tempMT/VTaddfield2"+rand+".shp"
+            temp9 =basePath + "/tempMT/VTaddfield3"+rand+".shp"
             processing.run("native:savefeatures", {'INPUT':out_dictionary,'OUTPUT':temp7,'LAYER_NAME':'','DATASOURCE_OPTIONS':'','LAYER_OPTIONS':''})
             processing.run("native:fieldcalculator", {'INPUT':temp5,'FIELD_NAME':'name2','FIELD_TYPE':2,'FIELD_LENGTH':0,'FIELD_PRECISION':0,'FORMULA':' to_string( VALUE )','OUTPUT':temp8})
             processing.run("native:joinattributestable", {'INPUT':temp8,'FIELD':'name2','INPUT_2':temp7,'FIELD_2':'Field1','FIELDS_TO_COPY':[],'METHOD':1,'DISCARD_NONMATCHING':False,'PREFIX':'Dict_','OUTPUT':temp6})
@@ -438,21 +273,25 @@ class BTM:
             fname = os.path.dirname(str(output_zones_Poly))
             vlayer = QgsVectorLayer(str(output_zones_Poly), str(output_zones_Poly[len(fname)+1:]), "ogr")
             QgsProject.instance().addMapLayer(vlayer)
-            self.colour_polygons_random(vlayer)
+            BTM.colour_polygons_random(vlayer)
             if DeleteInter:
                 import glob
-                delClasses = basePath + "/tmpBTMfiles/tmpClass*.*"
+                delClasses = basePath + "/tempMT/*.*"
                 for f in glob.glob(delClasses):
-                    os.remove(f)
-                delinnner = basePath + "/tmpBTMfiles/inner*.*"
+                    try:
+                        os.remove(f)
+                    except:
+                        print(f + " not removed")
+                """delinnner = basePath + "/tempMT/inner*.*"
                 for f in glob.glob(delinnner):
                     os.remove(f)
-                delouter = basePath + "/tmpBTMfiles/outer*.*"
+                delouter = basePath + "/tempMT/outer*.*"
                 for f in glob.glob(delouter):
                     os.remove(f)
+                """
         return
 
-    def runMod(self, input_bathymetry, broad_bpi_inner_radius,
+    def runMod(input_bathymetry, broad_bpi_inner_radius,
              broad_bpi_outer_radius, fine_bpi_inner_radius,
              fine_bpi_outer_radius, classification_dict, output_zones, keepInter, invert):
 
@@ -464,7 +303,7 @@ class BTM:
         """
         # Local workspace variables:
         basePath = str(os.path.dirname(input_bathymetry))
-        out_workspace = basePath + r"\tmpBTMfiles"        
+        out_workspace = basePath + r"\tempMT"        
 
         # local variables:
         broad_bpi = os.path.join(out_workspace, "broad_bpi")
@@ -473,14 +312,14 @@ class BTM:
         broad_std = os.path.join(out_workspace, "broad_std")
         fine_std = os.path.join(out_workspace, "fine_std")
 
-        MainRaster = basePath + r"\\tmpBTMfiles\\tmpMainRaster.img"
+        MainRaster = basePath + r"\\tempMT\\tmpMainRaster.img"
         try:
             remove_tif_file(MainRaster)
         except:
             a=1
-        slope_rast = basePath + r"\\tmpBTMfiles\\tmpSlopeRast.img"
+        slope_rast = basePath + r"\\tempMT\\tmpSlopeRast.img"
         try:
-            remove_tif_file(slope_rast)
+            remove_img_file(slope_rast)
         except:
             a=1
             
@@ -490,47 +329,47 @@ class BTM:
             processing.run("gdal:rastercalculator", {'INPUT_A':input_bathymetry,'BAND_A':1,'FORMULA':'A*(1.0)','OUTPUT':MainRaster})
 
         # Process: Build Broad Scale BPI
-        broad_bpi = basePath + r"\tmpBTMfiles\\tmpBroadBPI.img"
+        broad_bpi = basePath + r"\tempMT\\tmpBroadBPI.img"
         try:
-            remove_tif_file(broad_bpi)
+            remove_img_file(broad_bpi)
         except:
             a=1
-        fine_bpi = basePath + r"\\tmpBTMfiles\\tmpFineBPI.img"
+        fine_bpi = basePath + r"\\tempMT\\tmpFineBPI.img"
         try:
-            remove_tif_file(fine_bpi)
+            remove_img_file(fine_bpi)
         except:
             a=1
-        self.bpi3(MainRaster, broad_bpi_inner_radius,
+        BTM.bpi3(MainRaster, broad_bpi_inner_radius,
                  broad_bpi_outer_radius, broad_bpi)
 
         # Process: Build Fine Scale BPI
-        self.bpi3(MainRaster, fine_bpi_inner_radius,
+        BTM.bpi3(MainRaster, fine_bpi_inner_radius,
                  fine_bpi_outer_radius, fine_bpi)
         
-        broad_std = basePath + r"\\tmpBTMfiles\\tmpBroadStd.img"
+        broad_std = basePath + r"\\tempMT\\tmpBroadStd.img"
         try:
-            remove_tif_file(broad_std)
+            remove_img_file(broad_std)
         except:
             a=1
-        fine_std = basePath + r"\\tmpBTMfiles\\tmpFineStd.img"
+        fine_std = basePath + r"\\tempMT\\tmpFineStd.img"
         try:
-            remove_tif_file(fine_std)
+            remove_img_file(fine_std)
         except:
             a=1
  
         # Process: Standardize BPIs
-        self.standardize_bpi(broad_bpi, broad_std)
-        self.standardize_bpi(fine_bpi, fine_std)
+        BTM.standardize_bpi(broad_bpi, broad_std)
+        BTM.standardize_bpi(fine_bpi, fine_std)
 
         # Process: Calculate Slope
         processing.run("native:slope", {'INPUT':MainRaster,'Z_FACTOR':1,'OUTPUT':slope_rast})
 
         # Process: Zone Classification Builder
-        self.classify(classification_dict, broad_std, fine_std, slope_rast, MainRaster, output_zones)
+        BTM.classify(classification_dict, broad_std, fine_std, slope_rast, MainRaster, output_zones)
 
         return
 
-    def bpi3(self, bathy=None, inner_radius=None, outer_radius=None,
+    def bpi3(bathy=None, inner_radius=None, outer_radius=None,
              out_raster=None):
         """
         Create a bathymetric position index (BPI) raster, which
@@ -540,17 +379,17 @@ class BTM:
         basePath = str(os.path.dirname(bathy))
         temp1 = basePath + r"\\outertemp.img"
         try:
-            remove_tif_file(temp1)
+            remove_img_file(temp1)
         except:
             a=1
         temp2 = basePath + r"\\innertemp.img"
         try:
-            remove_tif_file(temp2)
+            remove_img_file(temp2)
         except:
             a=1
         bathy_nonull = basePath + r"\\bathy_nonull.img"
         try:
-            remove_tif_file(bathy_nonull)
+            remove_img_file(bathy_nonull)
         except:
             a=1
         processing.run("native:fillnodata", {'INPUT':bathy,'BAND':1,'FILL_VALUE':0,'OUTPUT':bathy_nonull})
@@ -560,11 +399,11 @@ class BTM:
         radi = float(inner_radius) * float(inner_radius)
         denom = rado-radi
         formula = "C - (((A*"+str(rado)+")-B*("+str(radi)+"))/"+str(denom)+")"
-        print(formula)
+        #print(formula)
         processing.run("gdal:rastercalculator", {'INPUT_A':temp1,'BAND_A':1,'INPUT_B':temp2,'BAND_B':1,'INPUT_C':bathy,'BAND_C':1,'FORMULA':formula,'OUTPUT':out_raster})
         return
 
-    def standardize_bpi(self, bpi_raster=None, out_raster=None):
+    def standardize_bpi(bpi_raster=None, out_raster=None):
         stats = processing.run("native:rasterlayerstatistics", {'INPUT':str(bpi_raster),'BAND':1})
         InputMean = stats["MEAN"]
         InputStd = stats["STD_DEV"]
@@ -573,7 +412,7 @@ class BTM:
 
         return
     
-    def classify(self, classification_file, bpi_broad_std, bpi_fine_std, slope, bathy, out_raster):
+    def classify(classification_file, bpi_broad_std, bpi_fine_std, slope, bathy, out_raster):
         """
         Perform raster classification, based on classification mappings
         and provided raster derivatives (fine- and broad- scale BPI,
@@ -587,7 +426,7 @@ class BTM:
         classes = btm_doc.classification()
         tmpClass = basePath + r"\\tmpClass.img"
         try:
-            remove_tif_file(fine_std)
+            remove_img_file(fine_std)
         except:
             a=1
         tmpClassIn = basePath + r"\\tmpClass1.img"
@@ -629,7 +468,16 @@ class BTM:
 
         return
     
-    def remove_tif_files(self, tempfilename):
+    def remove_tif_files(tempfilename):
+        import glob,os
+        templayer = QgsRasterLayer(tempfilename,"templayer")
+        QgsProject.instance().addMapLayer(templayer, False)
+        QgsProject.instance().removeMapLayer(templayer.id())
+        for f in glob.glob(tempfilename.replace(".tif",".*")):
+            os.remove(f)
+        return
+
+    def remove_img_file(tempfilename):
         import glob,os
         templayer = QgsRasterLayer(tempfilename,"templayer")
         QgsProject.instance().addMapLayer(templayer, False)
@@ -637,8 +485,8 @@ class BTM:
         for f in glob.glob(tempfilename.replace(".img",".*")):
             os.remove(f)
         return
-
-    def colour_polygons_random(self,layer):
+         
+    def colour_polygons_random(layer):
         # provide file name index and field's unique values
         from random import randrange
 
@@ -925,5 +773,6 @@ class BtmCsvDocument(BtmDocument):
 
             # everything but the header
             result = [r for r in in_csv]
+            f.close()
         return result
 

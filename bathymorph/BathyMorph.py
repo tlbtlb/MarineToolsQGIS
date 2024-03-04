@@ -24,11 +24,9 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.PyQt.QtWidgets import QAction,QFileDialog # added
-from qgis.core import QgsProject # added
+from qgis.PyQt.QtWidgets import QAction,QFileDialog 
+from qgis.core import QgsProject 
 
-# Initialize Qt resources from file resources.py
-from .resources import *
 # Import the code for the dialog
 from .BathyMorph_dialog import BathyMorphDialog
 import os.path
@@ -49,189 +47,91 @@ from qgis.core import QgsRasterBandStats
 import processing
 import sys
 import traceback
-import os
+import os, glob
 
 class BathyMorph:
     """QGIS Plugin Implementation."""
 
-    def __init__(self, iface):
-        """Constructor.
-
-        :param iface: An interface instance that will be passed to this class
-            which provides the hook by which you can manipulate the QGIS
-            application at run time.
-        :type iface: QgsInterface
-        """
-        # Save reference to the QGIS interface
-        self.iface = iface
-        # initialize plugin directory
-        self.plugin_dir = os.path.dirname(__file__)
-        # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
-        locale_path = os.path.join(
-            self.plugin_dir,
-            'i18n',
-            'BathyMorph_{}.qm'.format(locale))
-
-        if os.path.exists(locale_path):
-            self.translator = QTranslator()
-            self.translator.load(locale_path)
-            QCoreApplication.installTranslator(self.translator)
-
-        # Declare instance attributes
-        self.actions = []
-        self.menu = self.tr(u'&Marine Tools')
-
-        # Check if plugin was started the first time in current QGIS session
-        # Must be set in initGui() to survive plugin reloads
-        self.first_start = None
-
-    # noinspection PyMethodMayBeStatic
-    def tr(self, message):
-        """Get the translation for a string using Qt translation API.
-
-        We implement this ourselves since we do not inherit QObject.
-
-        :param message: String for translation.
-        :type message: str, QString
-
-        :returns: Translated version of message.
-        :rtype: QString
-        """
-        # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('BathyMorph', message)
-
-
-    def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
-        """Add a toolbar icon to the toolbar.
-
-        :param icon_path: Path to the icon for this action. Can be a resource
-            path (e.g. ':/plugins/foo/bar.png') or a normal file system path.
-        :type icon_path: str
-
-        :param text: Text that should be shown in menu items for this action.
-        :type text: str
-
-        :param callback: Function to be called when the action is triggered.
-        :type callback: function
-
-        :param enabled_flag: A flag indicating if the action should be enabled
-            by default. Defaults to True.
-        :type enabled_flag: bool
-
-        :param add_to_menu: Flag indicating whether the action should also
-            be added to the menu. Defaults to True.
-        :type add_to_menu: bool
-
-        :param add_to_toolbar: Flag indicating whether the action should also
-            be added to the toolbar. Defaults to True.
-        :type add_to_toolbar: bool
-
-        :param status_tip: Optional text to show in a popup when mouse pointer
-            hovers over the action.
-        :type status_tip: str
-
-        :param parent: Parent widget for the new action. Defaults None.
-        :type parent: QWidget
-
-        :param whats_this: Optional text to show in the status bar when the
-            mouse pointer hovers over the action.
-
-        :returns: The action that was created. Note that the action is also
-            added to self.actions list.
-        :rtype: QAction
-        """
-
-        icon = QIcon(icon_path)
-        action = QAction(icon, text, parent)
-        action.triggered.connect(callback)
-        action.setEnabled(enabled_flag)
-
-        if status_tip is not None:
-            action.setStatusTip(status_tip)
-
-        if whats_this is not None:
-            action.setWhatsThis(whats_this)
-
-        if add_to_toolbar:
-            # Adds plugin icon to Plugins toolbar
-            self.iface.addToolBarIcon(action)
-
-        if add_to_menu:
-            self.iface.addPluginToMenu(
-            #self.iface.addPluginToRasterMenu(
-                self.menu,
-                action)
-
-        self.actions.append(action)
-
-        return action
-
-    def initGui(self):
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
-        icon_path = ':/plugins/bathymorph/icon.png'
-        self.add_action(
-            icon_path,
-            text=self.tr(u'Bathymetry Morphometry'),
-            callback=self.run,
-            parent=self.iface.mainWindow())
-
-        # will be set False in run()
-        self.first_start = True
-
-
-    def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
-        for action in self.actions:
-            self.iface.removePluginRasterMenu(
-                self.tr(u'&Bathymetry morphometry'),
-                action)
-            self.iface.removeToolBarIcon(action)
-
-
-    def select_input_file1(self): # added
-        filename, _filter = QFileDialog.getOpenFileName(self.dlg, "Select input bathymetry file ","", '*.*') # added
-        self.dlg.lineEdit_1.setText(filename) # added
+    def select_input_file1(self): 
+        filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input bathymetry file ","", '*.img *.tif*') 
+        selfMT.dlg.lineEdit_1.setText(filename) 
         #autofill
         autoPoly = filename[:-4]+"_interp.img"
-        self.dlg.lineEdit_2.setText(autoPoly)
+        selfMT.dlg.lineEdit_2.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
         autoPoly = filename[:-4]+"_slope.img"
-        self.dlg.lineEdit_3.setText(autoPoly)
+        selfMT.dlg.lineEdit_3.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists2.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists2.setText("")
         autoPoly = filename[:-4]+"_contours.shp"
-        self.dlg.lineEdit_4.setText(autoPoly)
+        selfMT.dlg.lineEdit_4.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists5.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists5.setText("")
         autoPoly = filename[:-4]+"_roughness.img"
-        self.dlg.lineEdit_5.setText(autoPoly)
+        selfMT.dlg.lineEdit_5.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists3.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists3.setText("")
         autoPoly = filename[:-4]+"_hires.img"
-        self.dlg.lineEdit_6.setText(autoPoly)
-    def select_input_file2(self): # added
-        filename, _filter = QFileDialog.getOpenFileName(self.dlg, "Select output interpolated file ","", '*.*') # added
-        self.dlg.lineEdit_2.setText(filename) # added
-    def select_input_file3(self): # added
-        filename, _filter = QFileDialog.getOpenFileName(self.dlg, "Select output slope file","", '*.*') # added
-        self.dlg.lineEdit_3.setText(filename) # added
-    def select_input_file4(self): # added
-        filename, _filter = QFileDialog.getOpenFileName(self.dlg, "Select output contours shapefile","", '*.*') # added
-        self.dlg.lineEdit_4.setText(filename) # added
-    def select_input_file5(self): # added
-        filename, _filter = QFileDialog.getOpenFileName(self.dlg, "Select output roughness file","", '*.*') # added
-        self.dlg.lineEdit_5.setText(filename) # added
-    def select_input_file5(self): # added
-        filename, _filter = QFileDialog.getOpenFileName(self.dlg, "Select output high resolution file","", '*.*') # added
-        self.dlg.lineEdit_5.setText(filename) # added
+        selfMT.dlg.lineEdit_6.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists4.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists4.setText("")
+    def select_input_file2(self): 
+        filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output interpolated file ","", '*.img') 
+        selfMT.dlg.lineEdit_2.setText(filename) 
+        if os.path.exists(filename):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
+    def select_input_file3(self): 
+        filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output slope file","", '*.img') 
+        selfMT.dlg.lineEdit_3.setText(filename) 
+        if os.path.exists(filename):
+            selfMT.dlg.exists2.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists2.setText("")
+    def select_input_file4(self): 
+        filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output contours shapefile","", '*.shp') 
+        selfMT.dlg.lineEdit_4.setText(filename) 
+        if os.path.exists(filename):
+            selfMT.dlg.exists5.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists5.setText("")
+    def select_input_file5(self): 
+        filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output roughness file","", '*.img') 
+        selfMT.dlg.lineEdit_5.setText(filename) 
+        if os.path.exists(filename):
+            selfMT.dlg.exists3.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists3.setText("")         
+    def select_input_file6(self): 
+        filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output high resolution file","", '*.img') 
+        selfMT.dlg.lineEdit_6.setText(filename) 
+        if os.path.exists(filename):
+            selfMT.dlg.exists4.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists4.setText("")
+    def help(self): 
+        import webbrowser
+        import marinetools
+        MThelp = os.path.dirname(marinetools.__file__) + "\\bathymorph\\BathyMorph.pdf"
+        webbrowser.open(MThelp)  
 
     def run(self):
         import random
+        import marinetools
+        from marinetools.bathymorph.BathyMorph_dialog import BathyMorphDialog
+        global selfMT
         """Run method that performs all the real work"""
 
         # Create the dialog with elements (after translation) and keep reference
@@ -239,14 +139,17 @@ class BathyMorph:
         if self.first_start == True:
             self.first_start = False
             self.dlg = BathyMorphDialog()
-            self.dlg.pushButton_1.clicked.connect(self.select_input_file1) # added
-            self.dlg.pushButton_2.clicked.connect(self.select_input_file2) # added
-            self.dlg.pushButton_3.clicked.connect(self.select_input_file3) # added
-            self.dlg.pushButton_4.clicked.connect(self.select_input_file4) # added
-            self.dlg.pushButton_5.clicked.connect(self.select_input_file5) # added
+            selfMT = self
+            self.dlg.pushButton_1.clicked.connect(BathyMorph.select_input_file1) 
+            self.dlg.pushButton_2.clicked.connect(BathyMorph.select_input_file2) 
+            self.dlg.pushButton_3.clicked.connect(BathyMorph.select_input_file3) 
+            self.dlg.pushButton_4.clicked.connect(BathyMorph.select_input_file4) 
+            self.dlg.pushButton_5.clicked.connect(BathyMorph.select_input_file5) 
+            self.dlg.pushButton_6.clicked.connect(BathyMorph.select_input_file6) 
+            self.dlg.helpButton.clicked.connect(BathyMorph.help) 
             
         # Fetch the currently loaded layers
-        layers = QgsProject.instance().layerTreeRoot().children() # added
+        layers = QgsProject.instance().layerTreeRoot().children() 
         
         # show the dialog
         self.dlg.show()
@@ -262,7 +165,18 @@ class BathyMorph:
             filename3 = self.dlg.lineEdit_3.text()  
             filename4 = self.dlg.lineEdit_4.text()  
             filename5 = self.dlg.lineEdit_5.text()  
-            filename6 = self.dlg.lineEdit_6.text()  
+            filename6 = self.dlg.lineEdit_6.text()
+            if os.path.exists(filename2):
+                os.remove(filename2)
+            if os.path.exists(filename3):
+                os.remove(filename3)
+            if os.path.exists(filename4):
+                os.remove(filename4)
+            if os.path.exists(filename5):
+                os.remove(filename5)
+            if os.path.exists(filename6):
+                os.remove(filename6)
+
             Smooth = self.dlg.SmoothingFactor.text()
             Interval = self.dlg.ContourInterval.text()
             Resolution = self.dlg.ResolutionOut.text()
@@ -293,7 +207,7 @@ class BathyMorph:
             else:
                 DoHiRes=0
              
-            newdir = str(os.path.dirname(filename1) + "/tempBATHYfiles")
+            newdir = str(os.path.dirname(filename1) + "/tempMT")
             if not os.path.exists(newdir):
                 os.mkdir(newdir)
             
@@ -309,7 +223,6 @@ class BathyMorph:
 
             if DoSlope:
                 # Calculate Slope output to filename3 but use newInterp
-                newSlope = newdir + "/newSlope"+rand+".img"
                 processing.run("native:slope", {'INPUT':newInterp,'Z_FACTOR':1,'OUTPUT':filename3})
                 fname = os.path.dirname(str(filename3))
                 vlayer = QgsRasterLayer(str(filename3), str(filename3[len(fname)+1:]))
@@ -325,10 +238,10 @@ class BathyMorph:
                 dict = processing.run("native:rasterlayerproperties", {'INPUT':newInterp,'BAND':1})
                 cellsizeX = float(dict['PIXEL_WIDTH'])
                 cutoff = cellsizeX * 10.0
-                newContour1 = newdir + "/newSlope1"+rand+".shp"
-                newContour2 = newdir + "/newSlope2"+rand+".shp"
-                processing.run("gdal:contour", {'INPUT':newInterp,'BAND':1,'INTERVAL':Interval,'FIELD_NAME':'ELEV','CREATE_3D':False,'IGNORE_NODATA':False,'NODATA':None,'OFFSET':0,'EXTRA':'','OUTPUT':newContour1})
-                processing.run("qgis:exportaddgeometrycolumns", {'INPUT':newContour1,'CALC_METHOD':0,'OUTPUT':newContour2})
+                result = processing.run("gdal:contour", {'INPUT':newInterp,'BAND':1,'INTERVAL':Interval,'FIELD_NAME':'ELEV','CREATE_3D':False,'IGNORE_NODATA':False,'NODATA':None,'OFFSET':0,'EXTRA':'','OUTPUT':'TEMPORARY_OUTPUT'})
+                newContour1 = result['OUTPUT']
+                result = processing.run("qgis:exportaddgeometrycolumns", {'INPUT':newContour1,'CALC_METHOD':0,'OUTPUT':'TEMPORARY_OUTPUT'})
+                newContour2 = result['OUTPUT']
                 processing.run("native:extractbyattribute", {'INPUT':newContour2,'FIELD':'length','OPERATOR':2,'VALUE':cutoff,'OUTPUT':filename4})
                 fname = os.path.dirname(str(filename4))
                 vlayer = QgsVectorLayer(str(filename4), str(filename4[len(fname)+1:]), "ogr")
@@ -347,10 +260,14 @@ class BathyMorph:
                 newHiRes = newdir + "/newHiRes"+rand+".gpkg"
                 outTin = newdir + "/outTin"+rand+".img"
                 processing.run("native:pixelstopoints", {'INPUT_RASTER':newInterp,'RASTER_BAND':1,'FIELD_NAME':'VALUE','OUTPUT':newHiRes})
+                #result = processing.run("native:pixelstopoints", {'INPUT_RASTER':newInterp,'RASTER_BAND':1,'FIELD_NAME':'VALUE','OUTPUT':'TEMPORARY_OUTPUT'})
+                #newHiRes = result['OUTPUT']
                 expr = newHiRes + '|layername=newHiRes'+rand+'::~::0::~::1::~::0'
                 extent = QgsVectorLayer(newdir + "/newHiRes"+rand+".gpkg").extent()
                 crs = QgsVectorLayer(newdir + "/newHiRes"+rand+".gpkg").crs()
                 processing.run("qgis:tininterpolation", {'INTERPOLATION_DATA':expr,'METHOD':0,'EXTENT':extent,'PIXEL_SIZE':Resolution,'OUTPUT':outTin})
+                #result = processing.run("qgis:tininterpolation", {'INTERPOLATION_DATA':expr,'METHOD':0,'EXTENT':extent,'PIXEL_SIZE':Resolution,'OUTPUT':'TEMPORARY_OUTPUT'})
+                #outTin = result['OUTPUT']
                 tempName = os.path.split(newInterp)[1]
                 name = tempName.split('.')[0]
                 InRef = name + '@1'
@@ -362,5 +279,9 @@ class BathyMorph:
                 fname = os.path.dirname(str(filename6))
                 vlayer = QgsRasterLayer(str(filename6), str(filename6[len(fname)+1:]))
                 QgsProject.instance().addMapLayer(vlayer)
+            try:
+                os.rmdir(newdir)
+            except:
+                print("Temporary directory is not empty to delete")
             pass
 
