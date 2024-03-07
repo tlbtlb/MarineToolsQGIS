@@ -13,7 +13,7 @@ email=tim.lebas@noc.ac.uk
 
 about=Marine tools for analysis and interpretation.  These tools include:  Benthic Terrain Modeller - geomorphological interpretation of bathymetry data,  OBIA - Object Based Image Analysis using a simple k-means algorithm,   MBES Segmentation - Classification using OBIA on bathymetry and backscatter data from a Multibeam Echosounder,  Bathymetry Morphometry - Create several derivatives from bathymetry data,  Tools for multibeam survey design (new surveys and filling in surveys),  Imagery manipulation - removing outliers and changing null settings
 
-tracker=https://github.com/users/tlbtlb/projects/2
+tracker=https://github.com/tlbtlb/MarineToolsQGIS/issues
 repository=https://github.com/tlbtlb/MarineToolsQGIS
 # End of mandatory metadata
 
