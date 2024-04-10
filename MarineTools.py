@@ -74,7 +74,12 @@ class MarineTools:
         self.actionOBIA.setIcon(QIcon(plugin_dir+"/icons/OBIA.png"))
         self.actionOBIA.triggered.connect( self.OBIA1 )
         surveyDesignMenu.addAction( self.actionOBIA )
-        
+
+        self.actionRandomForest = QAction( 'Random Forest',  self.iface.mainWindow() )
+        self.actionRandomForest.setIcon(QIcon(plugin_dir+"/icons/randomforest.png"))
+        self.actionRandomForest.triggered.connect( self.RandomForest1 )
+        surveyDesignMenu.addAction( self.actionRandomForest )
+             
         self.actionRasterCoverage = QAction( 'Raster Coverage',  self.iface.mainWindow() )
         self.actionRasterCoverage.setIcon(QIcon(plugin_dir+"/icons/rastercoverage.png"))
         self.actionRasterCoverage.triggered.connect( self.RasterCoverage1 )
@@ -119,6 +124,12 @@ class MarineTools:
         from marinetools.obia import OBIA
         self.first_start = True
         OBIA.OBIA.run(self)
+
+     def RandomForest1(self):
+        from marinetools2.randomForest.randomForest_dialog import randomForestDialog
+        from marinetools2.randomForest import randomForest
+        self.first_start = True
+        randomForest.randomForest.run(self)
 
     def RasterCoverage1(self):
         from marinetools.rastercoverage.RasterCoverage_dialog import RasterCoverageDialog
