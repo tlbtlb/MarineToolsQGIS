@@ -116,14 +116,14 @@ class randomForest:
            
     def help(self): 
         import webbrowser
-        import marinetools2
-        MThelp = os.path.dirname(marinetools2.__file__) + "\\randomForest\\randomForest.pdf"
+        import marinetools
+        MThelp = os.path.dirname(marinetools.__file__) + "\\randomForest\\randomForest.pdf"
         webbrowser.open(MThelp)  
 
     def Rhelp(self): 
         import webbrowser
-        import marinetools2
-        MThelp = os.path.dirname(marinetools2.__file__) + "\\randomForest\\Rprogramming.pdf"
+        import marinetools
+        MThelp = os.path.dirname(marinetools.__file__) + "\\randomForest\\Rprogramming.pdf"
         webbrowser.open(MThelp)  
 
     def run(self):
@@ -604,7 +604,7 @@ class randomForest:
 
 def remove_temp_files(tempfilename):
     try:
-        for f in glob.glob(str(tempfilename[:-4]) + "*"):
+        for f in      .glob(str(tempfilename[:-4]) + "*"):
             os.remove(f)
     except:
         print(tempfilename + " not removed")
