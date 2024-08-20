@@ -148,8 +148,10 @@ class MarineTools:
 
     def CSV2Grid1(self):
         from marinetools.CSV2Grid.CSV2Grid import CSV2Grid_dialog
-        dialog = CSV2Grid_dialog(self.iface)
-        dialog.exec_()
+        #dialog = CSV2Grid_dialog(self.iface)
+        #dialog.exec_()
+        from marinetools.CSV2Grid import CSV2Grid
+        CSV2Grid.CSV2Grid_dialog(self.iface).exec()
 
     def EstimateCoverage1(self):
         from marinetools.estimatecoverage.EstimateCoverage_dialog import EstimateCoverageDialog
