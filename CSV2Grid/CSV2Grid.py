@@ -9,7 +9,7 @@
 # To make the <name>_form.py file from the ui file:
 # Open “OSGeo4W Shell” window
 
-# cd C:/Users/tlb/Documents/Software/QGIS_plugins\<name> 
+# cd C:/Users/tlb/Documents/Software/QGIS_plugins/marinetools/CSV2Grid 
 # python -m PyQt5.uic.pyuic -x CSV2Grid_form.ui -o CSV2Grid_form.py
 
 """
@@ -30,7 +30,8 @@ from urllib.request import urlopen
 import json
 import processing
 import glob
-
+import time
+from .resources import *
 
 from qgis.core import *
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -46,6 +47,7 @@ from time import sleep
 from xml.etree.ElementTree import XML, fromstring
 import webbrowser
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox
 try:
     from qgis.gui import QgsGenericProjectionSelector
 except ImportError:
@@ -63,6 +65,7 @@ class csv2grid_dialog(QtWidgets.QDialog):
     def __init__(self, iface):
         QtWidgets.QDialog.__init__(self)
         self.iface = iface
+        return
 
     def csv2grid_read_csv_header(self, input_csv_name):
         # This may take awhile with large CSV files
@@ -114,7 +117,7 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
     def __init__(self, iface):
         csv2grid_dialog.__init__(self, iface)
         self.setupUi(self)
-        self.BtnApplyClose.button(QtWidgets.QDialogButtonBox.Close).setAutoDefault(False)
+        self.BtnApplyClose.button(QtWidgets.QDialogButtonBox.Close).setAutoDefault(True)
         self.csv2grid_set_status_bar(self.status,self.LblStatus)
         self.lsCSV.clear()
         self.txtError.clear()
@@ -123,6 +126,14 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
         self.pushButton_2.clicked.connect(self.selectcrs_2)
         self.lsCSV.currentRowChanged.connect(self.set_field_names)
         self.BtnApplyClose.button(QtWidgets.QDialogButtonBox.Apply).clicked.connect(self.run)
+        self.helpButton_2.clicked.connect(self.help)
+        return
+
+    def help(self): 
+        import webbrowser
+        import marinetools
+        MThelp = os.path.dirname(marinetools.__file__) + "\\CSV2Grid\\CSV2Grid.pdf"
+        webbrowser.open(MThelp)
 
     def set_field_names(self):
         try:
@@ -247,8 +258,11 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
             CRSin = crs # default WGS84 Lat/Lon
         if selectedcrsdef_2 == "":
             CRSout = crs # default WGS84 Lat/Lon
-
-
+        mbox = QMessageBox()
+        mbox.setIcon(QMessageBox.Icon.Information)
+        mbox.setText("This process may take some time - hidden")
+        mbox.setWindowTitle("This process may take some time")
+        mbox.show()
         for item in items:
             self.lsCSV.setCurrentRow(item_count)
             input_csv_name = item.text()
@@ -267,6 +281,7 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
             else:
                 item_count +=1
                 self.LblStatus.setText (str(item_count)+"/ "+ str(self.lsCSV.count()) + " files converted")
+        mbox.close()
         """
         self.lsCSV.blockSignals(False)
         self.LinInputFolder.setEnabled(True)
@@ -406,7 +421,7 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
                                               'OPTIONS':'','DATA_TYPE':5,'INIT':None,'INVERT':False,'EXTRA':'',
                                               'OUTPUT':'TEMPORARY_OUTPUT'})
             tempfile5 = result['OUTPUT']
-            processing.run("gdal:fillnodata", {'INPUT':tempfile5,'BAND':1,'DISTANCE':5,'ITERATIONS':0,
+            processing.run("gdal:fillnodata", {'INPUT':tempfile5,'BAND':1,'DISTANCE':2,'ITERATIONS':0,
                                                'NO_MASK':False,'MASK_LAYER':None,'OPTIONS':'','EXTRA':'',
                                                'OUTPUT':output_file_grid})
             QgsProject.instance().addMapLayer(infile, False)
