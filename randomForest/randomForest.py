@@ -604,7 +604,7 @@ class randomForest:
 
 def remove_temp_files(tempfilename):
     try:
-        for f in      .glob(str(tempfilename[:-4]) + "*"):
+        for f in glob.glob(str(tempfilename[:-4]) + "*"):
             os.remove(f)
     except:
         print(tempfilename + " not removed")
