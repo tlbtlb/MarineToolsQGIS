@@ -42,9 +42,6 @@ from qgis.core import QgsRasterLayer
 from qgis.core import QgsRasterBandStats
 
 import processing
-import os
-import os.path
-import subprocess
 
 class OBIA:
     """QGIS Plugin Implementation."""
@@ -234,8 +231,7 @@ class OBIA:
             if filename3 != "" and filename4 == "" and filename5 == "":
                 processing.run("gdal:buildvirtualraster", {'INPUT':[filename1,filename2,filename3],'RESOLUTION':0,'SEPARATE':True,'PROJ_DIFFERENCE':False,'ADD_ALPHA':False,'ASSIGN_CRS':None,'RESAMPLING':0,'SRC_NODATA':'','EXTRA':'','OUTPUT':InputRas})
 
-            temp1 =newdir + "/OTBkmeans"+rand+".img"
-            temp2 =newdir + "/Gtranslate"+rand+".img"
+            temp1 =newdir + "/OTBkmeans"+rand+".tif"
             temp3 =newdir + "/RAsieve"+rand+".tif"
             temp4 =newdir + "/VCpolygons"+rand+".shp"
             temp5 =newdir + "/VGaggregate"+rand+".shp"
@@ -246,28 +242,7 @@ class OBIA:
             temp5e =newdir + "/VGaggregateE"+rand+".shp"
             
             print ("Picking", str(clusters), "clusters (classes) from ", InputRas)
-            
-            #processing.run("otb:KMeansClassification", {'in':InputRas,'out':temp1,'nc':clusters,'ts':100,'maxit':1000,'centroids.in':'','centroids.out':'','sampler':'periodic','sampler.periodic.jitter':0,'vm':None,'nodatalabel':0,'cleanup':True,'rand':0,'outputpixeltype':5})
-            print(os.path.dirname(__file__))
-            segdir = os.path.dirname(__file__) + "/segmentation"
-            segdir2 = segdir.replace("\\","/")
-            segexe = segdir2 + "/ShepherdSeg.exe"
-            segmentClumps2 = temp1.replace("\\","/") #  r"\tmpMT\tmpoutputSegments.img"
-            tmpPath2 = newdir.replace("\\","/")
-            processing.run("gdal:translate", {'INPUT':InputRas,'TARGET_CRS':None,'NODATA':None,'COPY_SUBDATASETS':False,'OPTIONS':'','EXTRA':'','DATA_TYPE':0,'OUTPUT':temp2})
-            fullcomm = segexe +" "+ temp2 +" "+ segmentClumps2 +" "+ tmpPath2 +" "+ str(clusters) +" "+ str(MinSize)
-            print("cd "+ segdir)
-            print(fullcomm)
-            
-            #subprocess.call(r"cmd /c cd " + segdir + " & " + str(fullcomm) + " > "+ newdir + "/temp.txt")
-            subprocess.call(r"cmd /k " + str(fullcomm) )
-
-
-
-
-
-
-
+            processing.run("otb:KMeansClassification", {'in':InputRas,'out':temp1,'nc':clusters,'ts':100,'maxit':1000,'centroids.in':'','centroids.out':'','sampler':'periodic','sampler.periodic.jitter':0,'vm':None,'nodatalabel':0,'cleanup':True,'rand':0,'outputpixeltype':5})
             print ("Removing classes with less than", str(MinSize),"pixels")
             
             import math

@@ -62,7 +62,13 @@ class MBESseg:
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input Bathymetry file ","", '*.img *.tif') 
         selfMT.dlg.mapFileBathy.setText(filename) 
         #autofill
-        autoPoly = filename[:-4]+"_MBESseg.shp"
+        Clusters = selfMT.dlg.Clusters.text()
+        if Clusters == "":
+            Clusters = "10"
+        MinimumSize = selfMT.dlg.MinimumSize.text()
+        if MinimumSize == "":
+            MinimumSize = "30"
+        autoPoly = filename[:-4]+"_MBESseg_"+Clusters+"_"+MinimumSize+".shp"
         selfMT.dlg.outputPolys.setText(autoPoly)
         selfMT.dlg.mapFileBathyCombo.clear() 
         if os.path.exists(autoPoly):
@@ -75,6 +81,22 @@ class MBESseg:
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input Backscatter file ","", '*.img *.tif') 
         selfMT.dlg.mapFileBacks.setText(filename) 
         selfMT.dlg.mapFileBacksCombo.clear() 
+        
+    def updateName(self): 
+        filename = selfMT.dlg.mapFileBathy.text()
+        #autofill
+        Clusters = selfMT.dlg.Clusters.text()
+        if Clusters == "":
+            Clusters = "10"
+        MinimumSize = selfMT.dlg.MinimumSize.text()
+        if MinimumSize == "":
+            MinimumSize = "30"
+        autoPoly = filename[:-4]+"_MBESseg_"+Clusters+"_"+MinimumSize+".shp"
+        selfMT.dlg.outputPolys.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
         
     def help(self): 
         import webbrowser
@@ -105,7 +127,9 @@ class MBESseg:
             selfMT = self
             self.dlg.outputFilePolys.clicked.connect(MBESseg.select_output_file) 
             self.dlg.inputFileBacks.clicked.connect(MBESseg.select_inputBacks_file) 
-            self.dlg.inputFileBathy.clicked.connect(MBESseg.select_inputBathy_file) 
+            self.dlg.inputFileBathy.clicked.connect(MBESseg.select_inputBathy_file)
+            self.dlg.Clusters.textChanged.connect(MBESseg.updateName) 
+            self.dlg.MinimumSize.textChanged.connect(MBESseg.updateName) 
             self.dlg.helpButton.clicked.connect(MBESseg.help) 
 
         # Fetch the currently loaded layers

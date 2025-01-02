@@ -56,8 +56,21 @@ class BTM:
 
     def select_input_file(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input raster Bathymetry file ","", '*.img *.tif') # added
-        autoPoly = filename[:-4]+"_BTM.shp"
-        autorast = filename[:-4]+"_zones.img"
+        #autofill
+        BroadInner = selfMT.dlg.BroadInner.text()
+        if BroadInner == "":
+            BroadInner = "5"
+        BroadOuter = selfMT.dlg.BroadOuter.text()
+        if BroadOuter == "":
+            BroadOuter = "50"
+        FineInner = selfMT.dlg.FineInner.text()
+        if FineInner == "":
+            FineInner = "2"
+        FineOuter = selfMT.dlg.FineOuter.text()
+        if FineOuter == "":
+            FineOuter = "10"
+        autoPoly = filename[:-4]+"_BTM_"+BroadInner+"_"+BroadOuter+"_"+FineInner+"_"+FineOuter+".shp"
+        autorast = filename[:-4]+"_zones_"+BroadInner+"_"+BroadOuter+"_"+FineInner+"_"+FineOuter+".img"
         selfMT.dlg.OutputPoly.setText(autoPoly)
         if os.path.exists(autoPoly):
             selfMT.dlg.exists1.setText("Existing file will be overwritten")
@@ -70,6 +83,34 @@ class BTM:
             selfMT.dlg.exists2.setText("")
         selfMT.dlg.BathyInput.setText(filename) # added
        
+    def updateName(self): 
+        filename = selfMT.dlg.BathyInput.text()
+        #autofill
+        BroadInner = selfMT.dlg.BroadInner.text()
+        if BroadInner == "":
+            BroadInner = "5"
+        BroadOuter = selfMT.dlg.BroadOuter.text()
+        if BroadOuter == "":
+            BroadOuter = "50"
+        FineInner = selfMT.dlg.FineInner.text()
+        if FineInner == "":
+            FineInner = "2"
+        FineOuter = selfMT.dlg.FineOuter.text()
+        if FineOuter == "":
+            FineOuter = "10"
+        autoPoly = filename[:-4]+"_BTM_"+BroadInner+"_"+BroadOuter+"_"+FineInner+"_"+FineOuter+".shp"
+        autorast = filename[:-4]+"_zones_"+BroadInner+"_"+BroadOuter+"_"+FineInner+"_"+FineOuter+".img"
+        selfMT.dlg.OutputPoly.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
+        selfMT.dlg.OutputRaster.setText(autorast)
+        if os.path.exists(autorast):
+            selfMT.dlg.exists2.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists2.setText("")
+
     def select_dictionary_file(self): # added
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select classification dictionary file ","", '*.csv') # added
         selfMT.dlg.Dictionary.setText(filename) # added
@@ -122,6 +163,10 @@ class BTM:
             self.dlg.DictFile.clicked.connect(BTM.select_dictionary_file) # added
             self.dlg.OutFileRaster.clicked.connect(BTM.select_outputRaster_file) # added
             self.dlg.OutFilePoly.clicked.connect(BTM.select_outputPoly_file) # added
+            self.dlg.BroadInner.textChanged.connect(BTM.updateName) 
+            self.dlg.BroadOuter.textChanged.connect(BTM.updateName) 
+            self.dlg.FineInner.textChanged.connect(BTM.updateName) 
+            self.dlg.FineOuter.textChanged.connect(BTM.updateName) 
             self.dlg.helpButton.clicked.connect(BTM.help) 
         # Fetch the currently loaded layers
         layers = QgsProject.instance().layerTreeRoot().children() # added
@@ -312,12 +357,12 @@ class BTM:
         broad_std = os.path.join(out_workspace, "broad_std")
         fine_std = os.path.join(out_workspace, "fine_std")
 
-        MainRaster = basePath + r"\\tempMT\\tmpMainRaster.img"
+        MainRaster = basePath + r"\\tempMT\\MainRaster.img"
         try:
             remove_tif_file(MainRaster)
         except:
             a=1
-        slope_rast = basePath + r"\\tempMT\\tmpSlopeRast.img"
+        slope_rast = basePath + r"\\tempMT\\SlopeRast.img"
         try:
             remove_img_file(slope_rast)
         except:
@@ -329,12 +374,12 @@ class BTM:
             processing.run("gdal:rastercalculator", {'INPUT_A':input_bathymetry,'BAND_A':1,'FORMULA':'A*(1.0)','OUTPUT':MainRaster})
 
         # Process: Build Broad Scale BPI
-        broad_bpi = basePath + r"\tempMT\\tmpBroadBPI.img"
+        broad_bpi = basePath + r"\tempMT\\BroadBPI.img"
         try:
             remove_img_file(broad_bpi)
         except:
             a=1
-        fine_bpi = basePath + r"\\tempMT\\tmpFineBPI.img"
+        fine_bpi = basePath + r"\\tempMT\\FineBPI.img"
         try:
             remove_img_file(fine_bpi)
         except:
@@ -346,12 +391,12 @@ class BTM:
         BTM.bpi3(MainRaster, fine_bpi_inner_radius,
                  fine_bpi_outer_radius, fine_bpi)
         
-        broad_std = basePath + r"\\tempMT\\tmpBroadStd.img"
+        broad_std = basePath + r"\\tempMT\\BroadStd.img"
         try:
             remove_img_file(broad_std)
         except:
             a=1
-        fine_std = basePath + r"\\tempMT\\tmpFineStd.img"
+        fine_std = basePath + r"\\tempMT\\FineStd.img"
         try:
             remove_img_file(fine_std)
         except:
@@ -407,8 +452,18 @@ class BTM:
         stats = processing.run("native:rasterlayerstatistics", {'INPUT':str(bpi_raster),'BAND':1})
         InputMean = stats["MEAN"]
         InputStd = stats["STD_DEV"]
+        tempName = os.path.split(bpi_raster)[1]
+        name = tempName.split('.')[0]
+        layerRef = name + '@1'
+
         formula = "(((A - "+str(InputMean)+")/"+str(InputStd)+")*100.0)"
-        processing.run("gdal:rastercalculator", {'INPUT_A':bpi_raster,'BAND_A':1,'FORMULA':formula,'OUTPUT':out_raster})
+        formula = '((("' + layerRef + '" - '+str(InputMean)+')/'+str(InputStd)+')*100.0)'
+        print(formula)
+        #processing.run("gdal:rastercalculator", {'INPUT_A':bpi_raster,'BAND_A':1,'FORMULA':formula,'OUTPUT':out_raster})
+        infile = QgsRasterLayer(bpi_raster)
+        crs = infile.crs()
+        extent = infile.extent()
+        processing.run("qgis:rastercalculator", {'EXPRESSION':formula,'LAYERS':[bpi_raster],'CELLSIZE':None,'EXTENT':extent,'CRS':None,'OUTPUT':out_raster})
 
         return
     

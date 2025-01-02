@@ -86,6 +86,12 @@ class BathyMorph:
             selfMT.dlg.exists4.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists4.setText("")
+        autoPoly = filename[:-4]+"_BPI.img"
+        selfMT.dlg.lineEdit_7.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists7.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists7.setText("")
     def select_input_file2(self): 
         filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output interpolated file ","", '*.img') 
         selfMT.dlg.lineEdit_2.setText(filename) 
@@ -121,6 +127,13 @@ class BathyMorph:
             selfMT.dlg.exists4.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists4.setText("")
+    def select_input_file7(self): 
+        filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output BPI file","", '*.img') 
+        selfMT.dlg.lineEdit_7.setText(filename) 
+        if os.path.exists(filename):
+            selfMT.dlg.exists7.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists7.setText("")
     def help(self): 
         import webbrowser
         import marinetools
@@ -146,6 +159,7 @@ class BathyMorph:
             self.dlg.pushButton_4.clicked.connect(BathyMorph.select_input_file4) 
             self.dlg.pushButton_5.clicked.connect(BathyMorph.select_input_file5) 
             self.dlg.pushButton_6.clicked.connect(BathyMorph.select_input_file6) 
+            self.dlg.pushButton_7.clicked.connect(BathyMorph.select_input_file7) 
             self.dlg.helpButton.clicked.connect(BathyMorph.help) 
             
         # Fetch the currently loaded layers
@@ -166,6 +180,7 @@ class BathyMorph:
             filename4 = self.dlg.lineEdit_4.text()  
             filename5 = self.dlg.lineEdit_5.text()  
             filename6 = self.dlg.lineEdit_6.text()
+            filename7 = self.dlg.lineEdit_7.text()
             if os.path.exists(filename2):
                 os.remove(filename2)
             if os.path.exists(filename3):
@@ -176,16 +191,24 @@ class BathyMorph:
                 os.remove(filename5)
             if os.path.exists(filename6):
                 os.remove(filename6)
+            if os.path.exists(filename7):
+                os.remove(filename7)
 
             Smooth = self.dlg.SmoothingFactor.text()
             Interval = self.dlg.ContourInterval.text()
             Resolution = self.dlg.ResolutionOut.text()
+            inner = self.dlg.inner.text()
+            outer = self.dlg.outer.text()
             if Smooth == "":
                 Smooth = "7"
             if Interval == "":
                 Interval = "10"
             if Resolution == "":
                 Resolution = "100"
+            if inner == "":
+                inner = "2"
+            if outer == "":
+                outer = "10"
             if self.dlg.DoInterpolate.isChecked() == True:
                 DoInterp=1
             else:
@@ -206,6 +229,14 @@ class BathyMorph:
                 DoHiRes=1
             else:
                 DoHiRes=0
+            if self.dlg.DoBPI.isChecked() == True:
+                DoBPI=1
+            else:
+                DoBPI=0
+            if self.dlg.DoStandardise.isChecked() == True:
+                DoStandardise=1
+            else:
+                DoStandardise=0
              
             newdir = str(os.path.dirname(filename1) + "/tempMT")
             if not os.path.exists(newdir):
@@ -217,7 +248,7 @@ class BathyMorph:
             if DoInterp:
                 # Interpolate output to filename2
                 newInterp = filename2
-                processing.run("gdal:fillnodata", {'INPUT':filename1,'BAND':1,'DISTANCE':7,'ITERATIONS':0,'NO_MASK':False,'MASK_LAYER':None,'OPTIONS':'','EXTRA':'','OUTPUT':filename2})
+                processing.run("gdal:fillnodata", {'INPUT':filename1,'BAND':1,'DISTANCE':Smooth,'ITERATIONS':0,'NO_MASK':False,'MASK_LAYER':None,'OPTIONS':'','EXTRA':'','OUTPUT':filename2})
             else:
                 newInterp = filename1
 
@@ -266,8 +297,6 @@ class BathyMorph:
                 extent = QgsVectorLayer(newdir + "/newHiRes"+rand+".gpkg").extent()
                 crs = QgsVectorLayer(newdir + "/newHiRes"+rand+".gpkg").crs()
                 processing.run("qgis:tininterpolation", {'INTERPOLATION_DATA':expr,'METHOD':0,'EXTENT':extent,'PIXEL_SIZE':Resolution,'OUTPUT':outTin})
-                #result = processing.run("qgis:tininterpolation", {'INTERPOLATION_DATA':expr,'METHOD':0,'EXTENT':extent,'PIXEL_SIZE':Resolution,'OUTPUT':'TEMPORARY_OUTPUT'})
-                #outTin = result['OUTPUT']
                 tempName = os.path.split(newInterp)[1]
                 name = tempName.split('.')[0]
                 InRef = name + '@1'
@@ -279,6 +308,54 @@ class BathyMorph:
                 fname = os.path.dirname(str(filename6))
                 vlayer = QgsRasterLayer(str(filename6), str(filename6[len(fname)+1:]))
                 QgsProject.instance().addMapLayer(vlayer)
+                
+            if DoBPI:
+                temp1 = newdir + r"\\outer.img"
+                try:
+                    remove_img_file(temp1)
+                except:
+                    a=1
+                temp2 = newdir + r"\\inner.img"
+                try:
+                    remove_img_file(temp2)
+                except:
+                    a=1
+                bathy_nonull = newdir + r"\\bathy_nonull.img"
+                try:
+                    remove_img_file(bathy_nonull)
+                except:
+                    a=1
+                bathy_noStan = newdir + r"\\bathy_noStan.img"
+                try:
+                    remove_img_file(bathy_noStan)
+                except:
+                    a=1
+                processing.run("native:fillnodata", {'INPUT':newInterp,'BAND':1,'FILL_VALUE':0,'OUTPUT':bathy_nonull})
+                processing.run("otb:Smoothing", {'in':bathy_nonull,'out':temp1,'type':'mean','type.mean.radius':outer,'outputpixeltype':5})
+                processing.run("otb:Smoothing", {'in':bathy_nonull,'out':temp2,'type':'mean','type.mean.radius':inner,'outputpixeltype':5})
+                rado = float(outer) * float(outer) # area of smoothed area (less the pi)
+                radi = float(inner) * float(inner)
+                denom = rado-radi
+                formula = "C - (((A*"+str(rado)+")-B*("+str(radi)+"))/"+str(denom)+")"
+                if DoStandardise:
+                    processing.run("gdal:rastercalculator", {'INPUT_A':temp1,'BAND_A':1,'INPUT_B':temp2,'BAND_B':1,'INPUT_C':newInterp,'BAND_C':1,'FORMULA':formula,'OUTPUT':bathy_noStan})
+                    stats = processing.run("native:rasterlayerstatistics", {'INPUT':str(bathy_noStan),'BAND':1})
+                    InputMean = stats["MEAN"]
+                    InputStd = stats["STD_DEV"]
+                    tempName = os.path.split(bathy_noStan)[1]
+                    name = tempName.split('.')[0]
+                    layerRef = name + '@1'
+                    formula = '((("' + layerRef + '" - '+str(InputMean)+')/'+str(InputStd)+')*100.0)'
+                    infile = QgsRasterLayer(newInterp)
+                    crs = infile.crs()
+                    extent = infile.extent()
+                    processing.run("qgis:rastercalculator", {'EXPRESSION':formula,'LAYERS':[bathy_noStan],'CELLSIZE':None,'EXTENT':extent,'CRS':None,'OUTPUT':filename7})
+                else:
+                    processing.run("gdal:rastercalculator", {'INPUT_A':temp1,'BAND_A':1,'INPUT_B':temp2,'BAND_B':1,'INPUT_C':newInterp,'BAND_C':1,'FORMULA':formula,'OUTPUT':filename7})
+                fname = os.path.dirname(str(filename7))
+                vlayer = QgsRasterLayer(str(filename7), str(filename7[len(fname)+1:]))
+                QgsProject.instance().addMapLayer(vlayer)
+                
             try:
                 os.rmdir(newdir)
             except:

@@ -1,0 +1,53 @@
+Program ShepherdSeg.py
+
+import rsgislib
+import rsgislib.segmentation
+from rsgislib.segmentation import shepherdseg
+import sys
+inputImage = sys.argv[1]
+outputImage = sys.argv[2]
+tmp_dir = sys.argv[3]
+num_clusters = int(sys.argv[4])
+min_n_pxls= int(sys.argv[5])
+shepherdseg.run_shepherd_segmentation(inputImage,outputImage, None,tmp_dir= tmp_dir, num_clusters= num_clusters,
+                                      min_n_pxls= min_n_pxls,gdalformat="HFA",no_delete=True,dist_thres=1000000,
+                                      calc_stats=False, no_stretch=True)
+
+
+To make the envuiro9nment and test it(in rsgislib environment in  anaconda prompt):
+
+conda create -n rsgislib python=3.11.8
+conda activate rsgislib 
+conda install -c conda-forge rsgislib
+cd C:\MarineToolsPro\scripts\segmentation
+pip install pyinstaller
+python
+import rsgislib
+import rsgislib.segmentation
+from rsgislib.segmentation import shepherdseg
+shepherdseg.run_shepherd_segmentation(r"C:\Users\tlb\Documents\ArcGIS\Projects\Shepherd_test\landsat4.img",
+                                      r"C:\Users\tlb\Documents\ArcGIS\Projects\Shepherd_test\landsat4output2.img",None,
+                                      tmp_dir= r"C:\Users\tlb\Documents\ArcGIS\Projects\Shepherd_test",
+                                      num_clusters=10,min_n_pxls=1000,gdalformat="HFA",no_delete=True)
+exit()
+
+
+To make the executable:
+
+pyinstaller -F ShepherdSeg.py
+
+
+To run it in cmd:
+
+cd C:\MarineToolsPro\scripts\segmentation
+python ShepherdSeg.py C:/Users/tlb/Documents/ArcGIS/Projects/Shepherd_test/landsat4.img C:/Users/tlb/Documents/ArcGIS/Projects/Shepherd_test/landsat4output.img C:/Users/tlb/Documents/ArcGIS/Projects/Shepherd_test 10 1000
+
+
+To run it in ArcPro:
+
+segdir = os.path.dirname(__file__) + "/segmentation"
+segexe = segdir + "/ShepherdSeg.exe"
+fullcomm = segexe +" "+ outLayers2 +" "+ segmentClumps2 +" "+ tmpPath2 +" "+ str(numClusters) +" "+ str(minObjectSize)
+subprocess.call("cmd /c cd " + segdir + " & " + str(fullcomm) + " > "+ tmpPath + "/temp.txt")
+
+
