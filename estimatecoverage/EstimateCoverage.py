@@ -59,7 +59,10 @@ class EstimateCoverage:
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input line of track","", '*.shp') # added
         selfMT.dlg.lineEdit_2.setText(filename) # added
         #autofill
-        autoPoly = filename[:-4]+"_coverage.shp"
+        lineEdit_3 = selfMT.dlg.lineEdit_3.text()
+        if lineEdit_3 == "":
+            lineEdit_3 = "140"
+        autoPoly = filename[:-4]+"_coverage_"+lineEdit_3+".shp"
         selfMT.dlg.lineEdit_4.setText(autoPoly)
         if os.path.exists(autoPoly):
             selfMT.dlg.exists1.setText("Existing file will be overwritten")
@@ -74,6 +77,19 @@ class EstimateCoverage:
         else:
             selfMT.dlg.exists1.setText("")
  
+    def updateName(self): 
+        filename = selfMT.dlg.lineEdit_2.text()
+        #autofill
+        lineEdit_3 = selfMT.dlg.lineEdit_3.text()
+        if lineEdit_3 == "":
+            lineEdit_3 = "140"
+        autoPoly = filename[:-4]+"_coverage_"+lineEdit_3+".shp"
+        selfMT.dlg.lineEdit_4.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
+        
     def help(self): 
         import webbrowser
         import marinetools
@@ -93,6 +109,7 @@ class EstimateCoverage:
             self.dlg.pushButton_1.clicked.connect(EstimateCoverage.select_input_file1) # added
             self.dlg.pushButton_2.clicked.connect(EstimateCoverage.select_input_file2) # added
             self.dlg.pushButton_4.clicked.connect(EstimateCoverage.select_input_file4) # added
+            self.dlg.lineEdit_3.textChanged.connect(EstimateCoverage.updateName) 
             self.dlg.helpButton.clicked.connect(EstimateCoverage.help) 
 
         # Fetch the currently loaded layers
@@ -144,7 +161,9 @@ class EstimateCoverage:
             #calculate coverage width
             import math 
             tanTheta = math.tan((math.pi/180)*float(swathAng/2))
-            coverageFormula = ' -("rasterValu") * ' + str(tanTheta) 
+            coverageFormula = ' -("rasterValu") * ' + str(tanTheta)
+            if InputMean > 0.0:
+                coverageFormula = '("rasterValu") * ' + str(tanTheta)
             
             result = processing.run("native:fieldcalculator", {'INPUT':tempfile3,'FIELD_NAME':'coverage','FIELD_TYPE':0,
             'FIELD_LENGTH':0,'FIELD_PRECISION':0,'FORMULA':coverageFormula,'OUTPUT':'TEMPORARY_OUTPUT'})
