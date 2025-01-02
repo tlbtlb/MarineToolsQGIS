@@ -63,13 +63,30 @@ class SurveyLines:
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Input Polygon area file","", '*.shp')
         selfMT.dlg.lineEdit_1.setText(filename)
         #autofill
-        autoPoly = filename[:-4]+"_wayPoints.shp"
+        lineEdit_2 = selfMT.dlg.lineEdit_2.text()
+        if lineEdit_2 == "":
+            lineEdit_2 = "0"
+        lineEdit_3 = selfMT.dlg.lineEdit_3.text()
+        if lineEdit_3 == "":
+            lineEdit_3 = "100"
+        if selfMT.dlg.reverseBox.isChecked():
+            rb="_Rev"
+        else:
+            rb=""
+        if selfMT.dlg.farEndBox.isChecked():
+            fb="_Far"
+        else:
+            fb=""
+        lineEdit_3 = selfMT.dlg.lineEdit_3.text()
+        if lineEdit_3 == "":
+            lineEdit_3 = "100"
+        autoPoly = filename[:-4]+"_wayPoints_"+lineEdit_2+"_"+lineEdit_3++fb+rb+".shp"
         selfMT.dlg.lineEdit_4.setText(autoPoly)
         if os.path.exists(autoPoly):
             selfMT.dlg.exists1.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists1.setText("")
-        autoPoly = filename[:-4]+"_surveyLines.shp"
+        autoPoly = filename[:-4]+"_surveyLines_"+lineEdit_2+"_"+lineEdit_3+fb+rb+".shp"
         selfMT.dlg.lineEdit_5.setText(autoPoly)
         if os.path.exists(autoPoly):
             selfMT.dlg.exists2.setText("Existing file will be overwritten")
@@ -88,6 +105,36 @@ class SurveyLines:
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select Output Survey Lines shapefile","", '*.shp')
         selfMT.dlg.lineEdit_5.setText(filename)
         if os.path.exists(filename):
+            selfMT.dlg.exists2.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists2.setText("")
+
+    def updateName(self): 
+        filename = selfMT.dlg.lineEdit_1.text()
+        #autofill
+        lineEdit_2 = selfMT.dlg.lineEdit_2.text()
+        if lineEdit_2 == "":
+            lineEdit_2 = "0"
+        lineEdit_3 = selfMT.dlg.lineEdit_3.text()
+        if lineEdit_3 == "":
+            lineEdit_3 = "100"
+        if selfMT.dlg.reverseBox.isChecked():
+            rb="_Rev"
+        else:
+            rb=""
+        if selfMT.dlg.farEndBox.isChecked():
+            fb="_Far"
+        else:
+            fb=""
+        autoPoly = filename[:-4]+"_wayPoints_"+lineEdit_2+"_"+lineEdit_3+fb+rb+".shp"
+        selfMT.dlg.lineEdit_4.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
+        autoPoly = filename[:-4]+"_surveyLines_"+lineEdit_2+"_"+lineEdit_3+fb+rb+".shp"
+        selfMT.dlg.lineEdit_5.setText(autoPoly)
+        if os.path.exists(autoPoly):
             selfMT.dlg.exists2.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists2.setText("")
@@ -111,6 +158,10 @@ class SurveyLines:
             self.dlg.pushButton_1.clicked.connect(SurveyLines.select_input_file1)
             self.dlg.pushButton_2.clicked.connect(SurveyLines.select_input_file2)
             self.dlg.pushButton_3.clicked.connect(SurveyLines.select_input_file3)
+            self.dlg.lineEdit_2.textChanged.connect(SurveyLines.updateName) 
+            self.dlg.lineEdit_3.textChanged.connect(SurveyLines.updateName)
+            self.dlg.farEndBox.stateChanged.connect(SurveyLines.updateName)
+            self.dlg.reverseBox.stateChanged.connect(SurveyLines.updateName)
             self.dlg.helpButton.clicked.connect(SurveyLines.help) 
           
         # Fetch the currently loaded layers
