@@ -98,6 +98,11 @@ class MarineTools:
         icon = QIcon(os.path.dirname(__file__) + "/icons/Utilities.png")
         self.MarineTools_add_submenu2(self.Utilities_menu, icon)
 
+        icon = QIcon(plugin_dir+"/icons/GLCM.png")
+        self.actionGLCM = QAction(icon, 'Grey Level Co-occurence Matrices',  self.iface.mainWindow() )
+        self.actionGLCM.triggered.connect( self.GLCM1 )
+        self.Utilities_menu.addAction( self.actionGLCM )
+
         icon = QIcon(plugin_dir+"/icons/estimatecoverage.png")
         self.actionEstimateCoverage = QAction(icon, 'Estimate new MBES Coverage',  self.iface.mainWindow() )
         self.actionEstimateCoverage.triggered.connect( self.EstimateCoverage1 )
@@ -151,13 +156,19 @@ class MarineTools:
         #dialog = CSV2Grid_dialog(self.iface)
         #dialog.exec_()
         from marinetools.CSV2Grid import CSV2Grid
-        CSV2Grid.CSV2Grid_dialog(self.iface).exec()
+        CSV2Grid.CSV2Grid_dialog(self.iface).exec_()
 
     def EstimateCoverage1(self):
         from marinetools.estimatecoverage.EstimateCoverage_dialog import EstimateCoverageDialog
         from marinetools.estimatecoverage import EstimateCoverage
         self.first_start = True
         EstimateCoverage.EstimateCoverage.run(self)
+        
+    def GLCM1(self):
+        from marinetools.GLCM.GLCM_dialog import GLCMDialog
+        from marinetools.GLCM import GLCM
+        self.first_start = True
+        GLCM.GLCM.run(self)
         
     def MBESseg1(self):
         from marinetools.MBESseg.MBESseg_dialog import MBESsegDialog

@@ -7,11 +7,11 @@ name=Marine Tools
 qgisMinimumVersion=3.0
 qgisMaximumVersion=3.98
 description=Tools for marine habitat mapping
-version=1.4.4
+version=1.5.1
 author=Tim Le Bas, National Oceanography Centre, Southampton. UK.
 email=tim.lebas@noc.ac.uk
 
-about=Marine tools for analysis and interpretation.  These tools include:  Benthic Terrain Modeller - geomorphological interpretation of bathymetry data,  OBIA - Object Based Image Analysis using a simple k-means algorithm,   MBES Segmentation - Classification using OBIA on bathymetry and backscatter data from a Multibeam Echosounder,  Bathymetry Morphometry - Create several derivatives from bathymetry data,  Tools for multibeam survey design (new surveys and filling in surveys),  Imagery manipulation - removing outliers and changing null settings, CSV conversion to grids & Random Forest predictions (using R)
+about=Marine tools for analysis and interpretation.  These tools include:  Benthic Terrain Modeller - geomorphological interpretation of bathymetry data,  OBIA - Object Based Image Analysis using a simple k-means algorithm,   MBES Segmentation - Classification using OBIA on bathymetry and backscatter data from a Multibeam Echosounder,  Bathymetry Morphometry - Create several derivatives from bathymetry data,  Tools for multibeam survey design (new surveys and filling in surveys),  Imagery manipulation - removing outliers and changing null settings, Grey level Co-occurence Matrices, CSV conversion to grids & Random Forest predictions (using R)
 
 tracker=https://github.com/tlbtlb/MarineToolsQGIS/issues
 repository=https://github.com/tlbtlb/MarineToolsQGIS
@@ -24,7 +24,7 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python, btm, benthic, survey, OBIA, R, segmentation
+tags=python, btm, benthic, survey, OBIA, R, segmentation, GLCM
 
 homepage=https://noc.ac.uk/n/Tim+Le+Bas
 
