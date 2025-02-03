@@ -118,7 +118,7 @@ class MBESseg:
         layers = QgsProject.instance().mapLayers().values()
         a=0
         filename="NULL"
-        for layer in (layer1 for layer1 in layers if str(layer1.type())== "1"):
+        for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
             if a == selectedLayerIndex:
                 filename = str(layer.source())
             a=a+1
@@ -180,12 +180,12 @@ class MBESseg:
         # self.dlg = MBES_SegmentationDialog()
         self.dlg.mapFileBathyCombo.clear() 
         # Populate the comboBox with names of all the loaded layer   
-        self.dlg.mapFileBathyCombo.addItems([layer.name() for layer in layers if str(layer.type())== "1"])
+        self.dlg.mapFileBathyCombo.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
 
         # Clear the contents of the comboBox from previous runs
         self.dlg.mapFileBacksCombo.clear() 
         # Populate the comboBox with names of all the loaded layer   
-        self.dlg.mapFileBacksCombo.addItems([layer.name() for layer in layers if str(layer.type())== "1"])
+        self.dlg.mapFileBacksCombo.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
         MBESseg.indexChanged(self) 
         
         # show the dialog
@@ -207,7 +207,7 @@ class MBESseg:
             currentText = selfMT.dlg.mapFileBathyCombo.currentText()
             layers = QgsProject.instance().mapLayers().values()
             a=0
-            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1"):
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
                 if a == selectedLayerIndex:
                     filename = str(layer.source())
                 a=a+1
@@ -218,7 +218,7 @@ class MBESseg:
             selectedLayerIndex = self.dlg.mapFileBacksCombo.currentIndex()
             currentText = selfMT.dlg.mapFileBacksCombo.currentText()
             a=0
-            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1"):
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
                 if a == selectedLayerIndex:
                     filename2 = str(layer.source())
                 a=a+1
