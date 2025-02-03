@@ -112,13 +112,16 @@
    <property name="text">
     <string>Broad-scale BPI inner radius</string>
    </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
   </widget>
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
      <x>530</x>
      <y>150</y>
-     <width>191</width>
+     <width>201</width>
      <height>16</height>
     </rect>
    </property>
@@ -129,6 +132,9 @@
    </property>
    <property name="text">
     <string>Broad-scale BPI outer radius</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
   <widget class="QLineEdit" name="FineInner">
@@ -169,6 +175,9 @@
    <property name="text">
     <string>Fine-scale BPI outer radius</string>
    </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
   </widget>
   <widget class="QLineEdit" name="FineOuter">
    <property name="geometry">
@@ -207,6 +216,9 @@
    </property>
    <property name="text">
     <string>Fine-scale BPI inner radius</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
   <widget class="QLabel" name="label_6">
@@ -362,14 +374,21 @@
   <widget class="QCheckBox" name="DeleteInter">
    <property name="geometry">
     <rect>
-     <x>360</x>
+     <x>420</x>
      <y>410</y>
-     <width>411</width>
+     <width>371</width>
      <height>20</height>
     </rect>
    </property>
+   <property name="minimumSize">
+    <size>
+     <width>371</width>
+     <height>0</height>
+    </size>
+   </property>
    <property name="font">
     <font>
+     <family>Arial</family>
      <pointsize>10</pointsize>
     </font>
    </property>
@@ -386,34 +405,10 @@
   <widget class="QCheckBox" name="InvertDepths">
    <property name="geometry">
     <rect>
-     <x>360</x>
+     <x>400</x>
      <y>450</y>
-     <width>411</width>
+     <width>391</width>
      <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="layoutDirection">
-    <enum>Qt::RightToLeft</enum>
-   </property>
-   <property name="text">
-    <string>Invert Depths? (depths should be positive for this model)        </string>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="BathyInput">
-   <property name="geometry">
-    <rect>
-     <x>250</x>
-     <y>30</y>
-     <width>541</width>
-     <height>41</height>
     </rect>
    </property>
    <property name="font">
@@ -422,8 +417,14 @@
      <pointsize>10</pointsize>
     </font>
    </property>
-   <property name="alignment">
-    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   <property name="layoutDirection">
+    <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="text">
+    <string>Invert Depths? (depths should be positive for this model)</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
    </property>
   </widget>
   <widget class="QPushButton" name="InputFile">
@@ -510,6 +511,22 @@
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="BathyInput">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>30</y>
+     <width>541</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
    </property>
   </widget>
  </widget>

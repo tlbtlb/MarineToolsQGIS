@@ -61,7 +61,9 @@ class SurveyLines:
     
     def select_input_file1(self):
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Input Polygon area file","", '*.shp')
-        selfMT.dlg.lineEdit_1.setText(filename)
+        selfMT.dlg.comboBox.clear() 
+        selfMT.dlg.comboBox.insertItem(0,filename)
+        selfMT.dlg.comboBox.setCurrentIndex(0)
         #autofill
         lineEdit_2 = selfMT.dlg.lineEdit_2.text()
         if lineEdit_2 == "":
@@ -109,8 +111,19 @@ class SurveyLines:
         else:
             selfMT.dlg.exists2.setText("")
 
-    def updateName(self): 
-        filename = selfMT.dlg.lineEdit_1.text()
+    def indexChanged(self): 
+        selectedLayerIndex = selfMT.dlg.comboBox.currentIndex()
+        currentText = selfMT.dlg.comboBox.currentText()
+        layers = QgsProject.instance().mapLayers().values()
+        a=0
+        filename="NULL"
+        for layer in (layer1 for layer1 in layers if str(layer1.type())== "0" or str(layer1.type())== "LayerType.Vector"):
+            if a == selectedLayerIndex:
+                filename = str(layer.source())
+            a=a+1
+        filename1= selfMT.dlg.lineEdit_4.text()[0:len(currentText[:-4])]
+        if filename1[0:3] == "_wa" or currentText[:-4] == filename1[0:len(currentText[:-4])]:
+            filename = currentText
         #autofill
         lineEdit_2 = selfMT.dlg.lineEdit_2.text()
         if lineEdit_2 == "":
@@ -158,14 +171,19 @@ class SurveyLines:
             self.dlg.pushButton_1.clicked.connect(SurveyLines.select_input_file1)
             self.dlg.pushButton_2.clicked.connect(SurveyLines.select_input_file2)
             self.dlg.pushButton_3.clicked.connect(SurveyLines.select_input_file3)
-            self.dlg.lineEdit_2.textChanged.connect(SurveyLines.updateName) 
-            self.dlg.lineEdit_3.textChanged.connect(SurveyLines.updateName)
-            self.dlg.farEndBox.stateChanged.connect(SurveyLines.updateName)
-            self.dlg.reverseBox.stateChanged.connect(SurveyLines.updateName)
+            self.dlg.lineEdit_2.textChanged.connect(SurveyLines.indexChanged) 
+            self.dlg.lineEdit_3.textChanged.connect(SurveyLines.indexChanged)
+            self.dlg.farEndBox.stateChanged.connect(SurveyLines.indexChanged)
+            self.dlg.reverseBox.stateChanged.connect(SurveyLines.indexChanged)
             self.dlg.helpButton.clicked.connect(SurveyLines.help) 
+            self.dlg.comboBox.currentIndexChanged.connect(SurveyLines.indexChanged)
           
         # Fetch the currently loaded layers
-        layers = QgsProject.instance().layerTreeRoot().children()
+        layers = QgsProject.instance().mapLayers().values()
+        self.dlg.comboBox.clear() 
+        # Populate the comboBox with names of all the raster loaded layers  (type="1")
+        self.dlg.comboBox.addItems([layer.name() for layer in layers if str(layer.type())== "0" or str(layer.type())== "LayerType.Vector"])
+        SurveyLines.indexChanged(self) 
             
         # show the dialog
         self.dlg.show()
@@ -176,8 +194,19 @@ class SurveyLines:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
-            
-            surveyedPolygon = self.dlg.lineEdit_1.text() 
+            selectedLayerIndex = self.dlg.comboBox.currentIndex()
+            currentText = selfMT.dlg.comboBox.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "0" or str(layer1.type())== "LayerType.Vector"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+
+            surveyedPolygon = filename 
+           
             azimuth = self.dlg.lineEdit_2.text()  
             spacing = self.dlg.lineEdit_3.text()          
             outputWayPoints = self.dlg.lineEdit_4.text() 

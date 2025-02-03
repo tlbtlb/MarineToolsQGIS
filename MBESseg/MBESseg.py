@@ -47,6 +47,33 @@ from qgis.core import QgsRasterBandStats
 
 import processing
 
+class LoadingScreenDlg:
+    """Loading screen animation."""
+    from qgis.PyQt.QtWidgets import QDialog, QLabel 
+    from qgis.PyQt.QtGui import QMovie, QPalette, QColor
+
+    def __init__(self, gif_path):
+        self.dlg = self.QDialog()
+        self.dlg.setWindowTitle("Please Wait")
+        self.dlg.setWindowModality(False)
+        self.dlg.setFixedSize(200, 100)
+        pal = self.QPalette()
+        role = self.QPalette.Background
+        pal.setColor(role, self.QColor(255, 255, 255))
+        self.dlg.setPalette(pal)
+        self.label_animation = self.QLabel(self.dlg)
+        self.movie = self.QMovie(gif_path)
+        self.label_animation.setMovie(self.movie)
+
+    def start_animation(self):
+        self.movie.start()
+        self.dlg.show()
+        return
+
+    def stop_animation(self):
+        self.movie.stop()
+        self.dlg.done(0)       
+
 class MBESseg:
     """QGIS Plugin Implementation."""
 
@@ -60,7 +87,10 @@ class MBESseg:
          
     def select_inputBathy_file(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input Bathymetry file ","", '*.img *.tif') 
-        selfMT.dlg.mapFileBathy.setText(filename) 
+        # Add layer to frame, find last in list, add to end of list, create all new lists
+        selfMT.dlg.mapFileBathyCombo.clear() 
+        selfMT.dlg.mapFileBathyCombo.insertItem(0,filename)
+        selfMT.dlg.mapFileBathyCombo.setCurrentIndex(0)
         #autofill
         Clusters = selfMT.dlg.Clusters.text()
         if Clusters == "":
@@ -70,20 +100,31 @@ class MBESseg:
             MinimumSize = "30"
         autoPoly = filename[:-4]+"_MBESseg_"+Clusters+"_"+MinimumSize+".shp"
         selfMT.dlg.outputPolys.setText(autoPoly)
-        selfMT.dlg.mapFileBathyCombo.clear() 
         if os.path.exists(autoPoly):
             selfMT.dlg.exists1.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists1.setText("")
 
     def select_inputBacks_file(self): 
-        selfMT.dlg.mapFileBacks.clear()
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input Backscatter file ","", '*.img *.tif') 
-        selfMT.dlg.mapFileBacks.setText(filename) 
+        # Add layer to frame, find last in list, add to end of list, create all new lists
         selfMT.dlg.mapFileBacksCombo.clear() 
+        selfMT.dlg.mapFileBacksCombo.insertItem(0,filename)
+        selfMT.dlg.mapFileBacksCombo.setCurrentIndex(0)
         
-    def updateName(self): 
-        filename = selfMT.dlg.mapFileBathy.text()
+    def indexChanged(self): 
+        selectedLayerIndex = selfMT.dlg.mapFileBathyCombo.currentIndex()
+        currentText = selfMT.dlg.mapFileBathyCombo.currentText()
+        layers = QgsProject.instance().mapLayers().values()
+        a=0
+        filename="NULL"
+        for layer in (layer1 for layer1 in layers if str(layer1.type())== "1"):
+            if a == selectedLayerIndex:
+                filename = str(layer.source())
+            a=a+1
+        filename1= selfMT.dlg.outputPolys.text()[0:len(currentText[:-4])]
+        if filename1[0:3] == "_MB" or currentText[:-4] == filename1[0:len(currentText[:-4])]:
+            filename = currentText
         #autofill
         Clusters = selfMT.dlg.Clusters.text()
         if Clusters == "":
@@ -125,24 +166,27 @@ class MBESseg:
             self.first_start = False
             self.dlg = MBESsegDialog()
             selfMT = self
-            self.dlg.outputFilePolys.clicked.connect(MBESseg.select_output_file) 
-            self.dlg.inputFileBacks.clicked.connect(MBESseg.select_inputBacks_file) 
             self.dlg.inputFileBathy.clicked.connect(MBESseg.select_inputBathy_file)
-            self.dlg.Clusters.textChanged.connect(MBESseg.updateName) 
-            self.dlg.MinimumSize.textChanged.connect(MBESseg.updateName) 
+            self.dlg.inputFileBacks.clicked.connect(MBESseg.select_inputBacks_file) 
+            self.dlg.outputFilePolys.clicked.connect(MBESseg.select_output_file) 
+            self.dlg.Clusters.textChanged.connect(MBESseg.indexChanged) 
+            self.dlg.MinimumSize.textChanged.connect(MBESseg.indexChanged) 
             self.dlg.helpButton.clicked.connect(MBESseg.help) 
+            self.dlg.mapFileBathyCombo.currentIndexChanged.connect(MBESseg.indexChanged)
 
         # Fetch the currently loaded layers
-        layers = QgsProject.instance().layerTreeRoot().children() 
+        layers = QgsProject.instance().mapLayers().values()
         # Clear the contents of the comboBox from previous runs
         # self.dlg = MBES_SegmentationDialog()
         self.dlg.mapFileBathyCombo.clear() 
         # Populate the comboBox with names of all the loaded layer   
-        self.dlg.mapFileBathyCombo.addItems([layer.name() for layer in layers]) 
+        self.dlg.mapFileBathyCombo.addItems([layer.name() for layer in layers if str(layer.type())== "1"])
+
         # Clear the contents of the comboBox from previous runs
         self.dlg.mapFileBacksCombo.clear() 
         # Populate the comboBox with names of all the loaded layer   
-        self.dlg.mapFileBacksCombo.addItems([layer.name() for layer in layers]) 
+        self.dlg.mapFileBacksCombo.addItems([layer.name() for layer in layers if str(layer.type())== "1"])
+        MBESseg.indexChanged(self) 
         
         # show the dialog
         self.dlg.show()
@@ -158,27 +202,38 @@ class MBESseg:
                 return
             if os.path.exists(OutputFilename):
                 os.remove(OutputFilename)
-            InputBathyLine = self.dlg.mapFileBathy.text()
-            InputBacksLine = self.dlg.mapFileBacks.text()
-            if str(InputBathyLine) == "":
-                selectedLayerIndex = self.dlg.mapFileBathyCombo.currentIndex()
-                InputBathy = layers[selectedLayerIndex].layer()
-            else:
-                InputBathy = QgsRasterLayer(InputBathyLine,"Bathymetry") # change to Layer
                 
-            if str(InputBacksLine) == "":
-                selectedLayerIndex = self.dlg.mapFileBacksCombo.currentIndex()
-                InputBacks = layers[selectedLayerIndex].layer()
-            else:
-                InputBacks = QgsRasterLayer(InputBacksLine,"Backscatter") # change to Layer
-          
+            selectedLayerIndex = self.dlg.mapFileBathyCombo.currentIndex()
+            currentText = selfMT.dlg.mapFileBathyCombo.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+            InputBathy = filename
+
+            selectedLayerIndex = self.dlg.mapFileBacksCombo.currentIndex()
+            currentText = selfMT.dlg.mapFileBacksCombo.currentText()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1"):
+                if a == selectedLayerIndex:
+                    filename2 = str(layer.source())
+                a=a+1
+            if currentText not in filename2:
+                filename2 = currentText
+            #InputBacks = layers[selectedLayerIndex].layer()
+            InputBacks = filename2
+
             clusters = self.dlg.Clusters.text()
             MinSize = self.dlg.MinimumSize.text()
             if clusters == "":
                 clusters = "10"
             if MinSize == "":
                 MinSize = "30"
-                
+
             try:
                 processing.run("otb:ImageEnvelope", {'in':InputBathy,'out':'TEMPORARY_OUTPUT','sr':0,'elev.dem':'','elev.geoid':'','elev.default':0,'proj':''})
             except:
@@ -191,9 +246,9 @@ class MBESseg:
                 os.mkdir(newdir)
             alphabet = '1234567890abcdefghijklmnopqrstuvwxyz'
             rand = alphabet[random.randint(1,25)] + alphabet[random.randint(1,35)] + alphabet[random.randint(1,35)] + alphabet[random.randint(1,35)]
-            temp1 =str(os.path.dirname(OutputFilename) + "/tempMT/OTBkmeans.tif")
-            temp2 =str(os.path.dirname(OutputFilename) + "/tempMT/OTBkmeansCentroids.dat")
-            temp3 =str(os.path.dirname(OutputFilename) + "/tempMT/RAsieve.tif")
+            temp1 =str(os.path.dirname(OutputFilename) + "/tempMT/OTBkmeans"+rand+".tif")
+            temp2 =str(os.path.dirname(OutputFilename) + "/tempMT/OTBkmeansCentroids"+rand+".dat")
+            temp3 =str(os.path.dirname(OutputFilename) + "/tempMT/RAsieve"+rand+".tif")
             temp4 =str(os.path.dirname(OutputFilename) + "/tempMT/VCpolygons"+rand+".shp")
             temp5 =str(os.path.dirname(OutputFilename) + "/tempMT/VGaggregate"+rand+".shp")
             temp5a =str(os.path.dirname(OutputFilename) + "/tempMT/VGaggregateA"+rand+".shp")
@@ -201,12 +256,12 @@ class MBESseg:
             temp5c =str(os.path.dirname(OutputFilename) + "/tempMT/VGaggregateC"+rand+".shp")
             temp6 =str(os.path.dirname(OutputFilename) + "/tempMT/GRAslope"+rand+".tif")
             temp7 =str(os.path.dirname(OutputFilename) + "/tempMT/GRAroughness"+rand+".tif")
-            temp6a =str(os.path.dirname(OutputFilename) + "/tempMT/GRAslopeA.tif")
-            temp7a =str(os.path.dirname(OutputFilename) + "/tempMT/GRAroughnessA.tif")
-            temp8 =str(os.path.dirname(OutputFilename) + "/tempMT/GRMbuildvirtualraster.vrt")
-            temp9 =str(os.path.dirname(OutputFilename) + "/tempMT/INBackscatterA.tif")
+            temp6a =str(os.path.dirname(OutputFilename) + "/tempMT/GRAslopeA"+rand+".tif")
+            temp7a =str(os.path.dirname(OutputFilename) + "/tempMT/GRAroughnessA"+rand+".tif")
+            temp8 =str(os.path.dirname(OutputFilename) + "/tempMT/GRMbuildvirtualraster"+rand+".vrt")
+            temp9 =str(os.path.dirname(OutputFilename) + "/tempMT/INBackscatterA"+rand+".tif")
 
-            print("Inputs")
+            print("Input filenames:")
             self.iface.messageBar().pushMessage("\nNumber of clusters = " + str(clusters)+"\n" +
                                                 "Minimum size       = " + str(MinSize)+"\n" +
                                                 "Output will be     " + str(OutputFilename))
@@ -216,6 +271,11 @@ class MBESseg:
             print(str(MinSize))
             print(str(OutputFilename))
             
+            plugin_dir = os.path.dirname(__file__)
+            gif_path = os.path.join(plugin_dir, "loading.gif")
+            self.loading_screen = LoadingScreenDlg(gif_path)  # init loading dlg
+            self.loading_screen.start_animation()  # start loading dlg
+
             processing.run("native:slope", {'INPUT':InputBathy,'Z_FACTOR':1,'OUTPUT':temp6})
             processing.run("gdal:roughness", {'INPUT':InputBathy,'BAND':1,'COMPUTE_EDGES':False,'OPTIONS':'','OUTPUT':temp7})
 
@@ -227,13 +287,20 @@ class MBESseg:
             roughnessStats = roughnesslayer.dataProvider().bandStatistics(1,QgsRasterBandStats.All)
             roughnessMin = roughnessStats.minimumValue
             roughnessMax = roughnessStats.maximumValue
-            BackscatterStats = InputBacks.dataProvider().bandStatistics(1,QgsRasterBandStats.All)
+            backscatterlayer = QgsRasterLayer(InputBacks,"backs")
+            BackscatterStats = backscatterlayer.dataProvider().bandStatistics(1,QgsRasterBandStats.All)
             BackscatterMin = BackscatterStats.minimumValue
             BackscatterMax = BackscatterStats.maximumValue
-
-            processing.run("grass7:r.rescale.eq", {'input':InputBacks,'from':[BackscatterMin,BackscatterMax],'to':[0,254],'output':temp9,'GRASS_REGION_PARAMETER':None,'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
-            processing.run("grass7:r.rescale.eq", {'input':temp6,'from':[0.0,slopeMax],'to':[0,254],'output':temp6a,'GRASS_REGION_PARAMETER':None,'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
-            processing.run("grass7:r.rescale.eq", {'input':temp7,'from':[roughnessMin,roughnessMax],'to':[0,254],'output':temp7a,'GRASS_REGION_PARAMETER':None,'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
+            
+            processing.run("grass7:r.rescale.eq", {'input':InputBacks,'from':[BackscatterMin,BackscatterMax],
+                                                   'to':[0,254],'output':temp9,'GRASS_REGION_PARAMETER':None,
+                                                   'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
+            processing.run("grass7:r.rescale.eq", {'input':temp6,'from':[0.0,slopeMax],'to':[0,254],
+                                                   'output':temp6a,'GRASS_REGION_PARAMETER':None,
+                                                   'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
+            processing.run("grass7:r.rescale.eq", {'input':temp7,'from':[roughnessMin,roughnessMax],
+                                                   'to':[0,254],'output':temp7a,'GRASS_REGION_PARAMETER':None,
+                                                   'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
 
             #self.iface.messageBar().pushMessage("Now Layering")
             processing.run("gdal:buildvirtualraster", {'INPUT':[temp6a,temp7a,temp9],'RESOLUTION':0,'SEPARATE':True,'PROJ_DIFFERENCE':False,'ADD_ALPHA':False,'ASSIGN_CRS':None,'RESAMPLING':0,'SRC_NODATA':'','EXTRA':'','OUTPUT':temp8})
@@ -244,7 +311,7 @@ class MBESseg:
             power = math.log(int(MinSize),2)+1.0 # Increments of power of two sizes
             first = temp1
             for x in range(1,int(power)):
-                next=str(os.path.dirname(OutputFilename) + "/RAsieve"+str(x)+".tif")
+                next=str(os.path.dirname(OutputFilename) + "/RAsieve"+rand+str(x)+".tif")
                 Size = 2**x
                 processing.run("gdal:sieve", {'INPUT':first,'THRESHOLD':Size,'EIGHT_CONNECTEDNESS':False,'NO_MASK':False,'MASK_LAYER':None,'EXTRA':'','OUTPUT':next})
                 remove_tif_files(first)
@@ -259,6 +326,8 @@ class MBESseg:
             processing.run("native:zonalstatisticsfb", {'INPUT':temp5a,'INPUT_RASTER':temp6,'RASTER_BAND':1,'COLUMN_PREFIX':'slope_','STATISTICS':[2,4],'OUTPUT':temp5b})
             processing.run("native:zonalstatisticsfb", {'INPUT':temp5b,'INPUT_RASTER':temp7,'RASTER_BAND':1,'COLUMN_PREFIX':'rough_','STATISTICS':[2,4],'OUTPUT':temp5c})
             processing.run("native:multiparttosingleparts", {'INPUT':temp5c,'OUTPUT':OutputFilename})
+
+            self.loading_screen.stop_animation()
             
             fname = os.path.dirname(str(OutputFilename))
             vlayer = QgsVectorLayer(str(OutputFilename), str(OutputFilename[len(fname)+1:]), "ogr")

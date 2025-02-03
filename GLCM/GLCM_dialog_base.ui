@@ -56,7 +56,7 @@
     <rect>
      <x>10</x>
      <y>2</y>
-     <width>161</width>
+     <width>151</width>
      <height>52</height>
     </rect>
    </property>
@@ -71,22 +71,6 @@
    </property>
    <property name="textFormat">
     <enum>Qt::PlainText</enum>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="inputFile">
-   <property name="geometry">
-    <rect>
-     <x>170</x>
-     <y>12</y>
-     <width>501</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Arial</family>
-     <pointsize>10</pointsize>
-    </font>
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -151,7 +135,7 @@
     <rect>
      <x>10</x>
      <y>50</y>
-     <width>241</width>
+     <width>151</width>
      <height>31</height>
     </rect>
    </property>
@@ -163,6 +147,9 @@
    </property>
    <property name="text">
     <string>Output Image raster </string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
   <widget class="QPushButton" name="outputFileDir">
@@ -403,6 +390,22 @@
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="inputCombo">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>10</y>
+     <width>501</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Arial</family>
+     <pointsize>10</pointsize>
+    </font>
    </property>
   </widget>
  </widget>

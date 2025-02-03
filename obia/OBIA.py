@@ -46,12 +46,40 @@ import os
 import os.path
 import subprocess
 
+class LoadingScreenDlg:
+    """Loading screen animation."""
+    from qgis.PyQt.QtWidgets import QDialog, QLabel 
+    from qgis.PyQt.QtGui import QMovie, QPalette, QColor
+
+    def __init__(self, gif_path):
+        self.dlg = self.QDialog()
+        self.dlg.setWindowTitle("Please Wait")
+        self.dlg.setWindowModality(False)
+        self.dlg.setFixedSize(200, 100)
+        pal = self.QPalette()
+        role = self.QPalette.Background
+        pal.setColor(role, self.QColor(255, 255, 255))
+        self.dlg.setPalette(pal)
+        self.label_animation = self.QLabel(self.dlg)
+        self.movie = self.QMovie(gif_path)
+        self.label_animation.setMovie(self.movie)
+
+    def start_animation(self):
+        self.movie.start()
+        self.dlg.show()
+        return
+
+    def stop_animation(self):
+        self.movie.stop()
+        self.dlg.done(0)       
+
 class OBIA:
     """QGIS Plugin Implementation."""
     def select_input_file1(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input raster file 1","", '*.img *.tif') 
-        selfMT.dlg.lineEdit_1.setText(filename) 
-        #autofill
+        selfMT.dlg.comboBox1.clear() 
+        selfMT.dlg.comboBox1.insertItem(0,filename)
+        selfMT.dlg.comboBox1.setCurrentIndex(0)
         #autofill
         Clusters = selfMT.dlg.Clusters.text()
         if Clusters == "":
@@ -68,16 +96,24 @@ class OBIA:
         
     def select_input_file2(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input raster file 2","", '*.img *.tif') 
-        selfMT.dlg.lineEdit_2.setText(filename) 
+        selfMT.dlg.comboBox2.clear() 
+        selfMT.dlg.comboBox2.insertItem(0,filename)
+        selfMT.dlg.comboBox2.setCurrentIndex(0)
     def select_input_file3(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input raster file 3","", '*.img *.tif') 
-        selfMT.dlg.lineEdit_3.setText(filename) 
+        selfMT.dlg.comboBox3.clear() 
+        selfMT.dlg.comboBox3.insertItem(0,filename)
+        selfMT.dlg.comboBox3.setCurrentIndex(0)
     def select_input_file4(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input raster file 4","", '*.img *.tif') 
-        selfMT.dlg.lineEdit_4.setText(filename) 
+        selfMT.dlg.comboBox4.clear() 
+        selfMT.dlg.comboBox4.insertItem(0,filename)
+        selfMT.dlg.comboBox4.setCurrentIndex(0)
     def select_input_file5(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input raster file 5","", '*.img *.tif') 
-        selfMT.dlg.lineEdit_5.setText(filename) 
+        selfMT.dlg.comboBox5.clear() 
+        selfMT.dlg.comboBox5.insertItem(0,filename)
+        selfMT.dlg.comboBox5.setCurrentIndex(0)
     def select_output_file(self): 
         filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output file ","", '*.shp') 
         selfMT.dlg.lineEdit.setText(filename) 
@@ -85,9 +121,21 @@ class OBIA:
             selfMT.dlg.exists1.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists1.setText("")
-            
-    def updateName(self): 
-        filename = selfMT.dlg.lineEdit_1.text()
+
+    def indexChanged(self): 
+        selectedLayerIndex = selfMT.dlg.comboBox1.currentIndex()
+        currentText = selfMT.dlg.comboBox1.currentText()
+        layers = QgsProject.instance().mapLayers().values()
+        a=0
+        filename="NULL"
+        #for layer in layers if str(layer.type())== "1":
+        for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+            if a == selectedLayerIndex:
+                filename = str(layer.source())
+            a=a+1
+        filename1= selfMT.dlg.lineEdit.text()[0:len(currentText[:-4])]
+        if filename1[0:3] == "_OB" or currentText[:-4] == filename1[0:len(currentText[:-4])]:
+            filename = currentText
         #autofill
         Clusters = selfMT.dlg.Clusters.text()
         if Clusters == "":
@@ -101,7 +149,7 @@ class OBIA:
             selfMT.dlg.exists1.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists1.setText("")
-        
+                    
     def help(self): 
         import webbrowser
         import marinetools
@@ -133,12 +181,31 @@ class OBIA:
             self.dlg.pushButton_4.clicked.connect(OBIA.select_input_file4) 
             self.dlg.pushButton_5.clicked.connect(OBIA.select_input_file5) 
             self.dlg.pushButton.clicked.connect(OBIA.select_output_file) 
-            self.dlg.Clusters.textChanged.connect(OBIA.updateName) 
-            self.dlg.MinimumSize.textChanged.connect(OBIA.updateName) 
+            self.dlg.Clusters.textChanged.connect(OBIA.indexChanged) 
+            self.dlg.MinimumSize.textChanged.connect(OBIA.indexChanged) 
             self.dlg.helpButton.clicked.connect(OBIA.help) 
+            self.dlg.comboBox1.currentIndexChanged.connect(OBIA.indexChanged)
             
         # Fetch the currently loaded layers
-        layers = QgsProject.instance().layerTreeRoot().children() 
+        layers = QgsProject.instance().mapLayers().values()
+
+        self.dlg.comboBox1.clear() 
+        self.dlg.comboBox1.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        self.dlg.comboBox2.clear() 
+        self.dlg.comboBox2.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        self.dlg.comboBox3.clear() 
+        self.dlg.comboBox3.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        self.dlg.comboBox3.insertItem(0,"")
+        max = selfMT.dlg.comboBox3.setCurrentIndex(0)
+        self.dlg.comboBox4.clear() 
+        self.dlg.comboBox4.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        self.dlg.comboBox4.insertItem(0,"")
+        max = selfMT.dlg.comboBox4.setCurrentIndex(0)
+        self.dlg.comboBox5.clear() 
+        self.dlg.comboBox5.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        self.dlg.comboBox5.insertItem(0,"")
+        max = selfMT.dlg.comboBox5.setCurrentIndex(0)
+        OBIA.indexChanged(self) 
         
         # show the dialog
         self.dlg.show()
@@ -149,11 +216,67 @@ class OBIA:
 
         if result:
             import glob
-            filename1a = self.dlg.lineEdit_1.text()  
-            filename2a = self.dlg.lineEdit_2.text()  
-            filename3a = self.dlg.lineEdit_3.text()  
-            filename4a = self.dlg.lineEdit_4.text()  
-            filename5a = self.dlg.lineEdit_5.text()
+            selectedLayerIndex = self.dlg.comboBox1.currentIndex()
+            currentText = selfMT.dlg.comboBox1.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+            filename1a = filename
+            
+            selectedLayerIndex = self.dlg.comboBox2.currentIndex()
+            currentText = selfMT.dlg.comboBox2.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+            filename2a = filename
+
+            selectedLayerIndex = self.dlg.comboBox3.currentIndex()
+            currentText = selfMT.dlg.comboBox3.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=1
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename or currentText == "":
+                filename = currentText
+            filename3a = filename
+
+            selectedLayerIndex = self.dlg.comboBox4.currentIndex()
+            currentText = selfMT.dlg.comboBox4.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=1
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename or currentText == "":
+                filename = currentText                
+            filename4a = filename
+
+            selectedLayerIndex = self.dlg.comboBox5.currentIndex()
+            currentText = selfMT.dlg.comboBox5.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=1
+            #for layer in layers:
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename or currentText == "":
+                filename = currentText
+            filename5a = filename
+            
             clusters = self.dlg.Clusters.text()
             MinSize = self.dlg.MinimumSize.text()
             if clusters == "":
@@ -169,7 +292,20 @@ class OBIA:
                 QMessageBox.information(None, "Information:", "This tool requires (OrfeoToolBox (OTB) to be installed\nDownload from https://www.orfeo-toolbox.org/download/\n and install locally.")
                 OBIA.otbInstall(self)
                 return
+            print("Input filenames:")
+            print(filename1a)
+            print(filename2a)
+            if filename3a != "":
+                print(filename3a)
+            if filename4a != "":
+                print(filename4a)
+            if filename5a != "":
+                print(filename5a)
                 
+            plugin_dir = os.path.dirname(__file__)
+            gif_path = os.path.join(plugin_dir, "loading.gif")
+            self.loading_screen = LoadingScreenDlg(gif_path)  # init loading dlg
+            self.loading_screen.start_animation()  # start loading dlg
 
             OutputFilename = self.dlg.lineEdit.text()
             if os.path.exists(OutputFilename):
@@ -245,10 +381,11 @@ class OBIA:
             temp5d =newdir + "/VGaggregateD"+rand+".shp"
             temp5e =newdir + "/VGaggregateE"+rand+".shp"
             
-            print ("Picking", str(clusters), "clusters (classes) from ", InputRas)
+            print ("Picking", str(clusters), "clusters (classes)  ")
             
-            #processing.run("otb:KMeansClassification", {'in':InputRas,'out':temp1,'nc':clusters,'ts':100,'maxit':1000,'centroids.in':'','centroids.out':'','sampler':'periodic','sampler.periodic.jitter':0,'vm':None,'nodatalabel':0,'cleanup':True,'rand':0,'outputpixeltype':5})
-            print(os.path.dirname(__file__))
+            processing.run("otb:KMeansClassification", {'in':InputRas,'out':temp1,'nc':clusters,'ts':100,'maxit':1000,'centroids.in':'','centroids.out':'','sampler':'periodic','sampler.periodic.jitter':0,'vm':None,'nodatalabel':0,'cleanup':True,'rand':0,'outputpixeltype':5})
+
+            """print(os.path.dirname(__file__))
             segdir = os.path.dirname(__file__) + "/segmentation"
             segdir2 = segdir.replace("\\","/")
             segexe = segdir2 + "/ShepherdSeg.exe"
@@ -260,8 +397,8 @@ class OBIA:
             print(fullcomm)
             
             #subprocess.call(r"cmd /c cd " + segdir + " & " + str(fullcomm) + " > "+ newdir + "/temp.txt")
-            subprocess.call(r"cmd /k " + str(fullcomm) )
-
+            subprocess.call(r"cmd /c " + str(fullcomm) )
+            """
 
 
 
@@ -306,6 +443,8 @@ class OBIA:
                 processing.run("native:zonalstatisticsfb", {'INPUT':temp5b,'INPUT_RASTER':filename3,'RASTER_BAND':1,'COLUMN_PREFIX':'file3_','STATISTICS':[2,4],'OUTPUT':temp5c})
                 processing.run("native:zonalstatisticsfb", {'INPUT':temp5c,'INPUT_RASTER':filename4,'RASTER_BAND':1,'COLUMN_PREFIX':'file4_','STATISTICS':[2,4],'OUTPUT':temp5d})
                 processing.run("native:zonalstatisticsfb", {'INPUT':temp5d,'INPUT_RASTER':filename5,'RASTER_BAND':1,'COLUMN_PREFIX':'file5_','STATISTICS':[2,4],'OUTPUT':temp5e})
+
+            self.loading_screen.stop_animation()
 
             print ("Output file = ",OutputFilename)
             processing.run("native:multiparttosingleparts", {'INPUT':temp5e,'OUTPUT':OutputFilename})

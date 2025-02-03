@@ -56,13 +56,41 @@ import traceback
 import os
 import random
 
+class LoadingScreenDlg:
+    """Loading screen animation."""
+    from qgis.PyQt.QtWidgets import QDialog, QLabel 
+    from qgis.PyQt.QtGui import QMovie, QPalette, QColor
+
+    def __init__(self, gif_path):
+        self.dlg = self.QDialog()
+        self.dlg.setWindowTitle("Please Wait")
+        self.dlg.setWindowModality(False)
+        self.dlg.setFixedSize(200, 100)
+        pal = self.QPalette()
+        role = self.QPalette.Background
+        pal.setColor(role, self.QColor(255, 255, 255))
+        self.dlg.setPalette(pal)
+        self.label_animation = self.QLabel(self.dlg)
+        self.movie = self.QMovie(gif_path)
+        self.label_animation.setMovie(self.movie)
+
+    def start_animation(self):
+        self.movie.start()
+        self.dlg.show()
+        return
+
+    def stop_animation(self):
+        self.movie.stop()
+        self.dlg.done(0)       
 
 class RemoveValues:
     """QGIS Plugin Implementation."""
 
     def select_input_file1(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input raster file","", '*.img *.tif') 
-        selfMT.dlg.inputRaster.setText(filename) 
+        selfMT.dlg.inputCombo.clear() 
+        selfMT.dlg.inputCombo.insertItem(0,filename)
+        selfMT.dlg.inputCombo.setCurrentIndex(0)
         #autofill
         autoPoly = filename[:-4]+"_out.img"
         selfMT.dlg.outputRaster.setText(autoPoly)
@@ -79,6 +107,27 @@ class RemoveValues:
         else:
             selfMT.dlg.exists1.setText("")
         
+    def indexChanged(self): 
+        selectedLayerIndex = selfMT.dlg.inputCombo.currentIndex()
+        currentText = selfMT.dlg.inputCombo.currentText()
+        layers = QgsProject.instance().mapLayers().values()
+        a=0
+        filename="NULL"
+        for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+            if a == selectedLayerIndex:
+                filename = str(layer.source())
+            a=a+1
+        filename1= selfMT.dlg.outputRaster.text()[0:len(currentText[:-4])]
+        if filename1[0:3] == "_ou" or currentText[:-4] == filename1[0:len(currentText[:-4])]:
+            filename = currentText
+        #autofill
+        autoPoly = filename[:-4]+"_out.img"
+        selfMT.dlg.outputRaster.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
+      
     def help(self): 
         import webbrowser
         import marinetools
@@ -174,9 +223,13 @@ class RemoveValues:
             self.dlg.inButton.clicked.connect(RemoveValues.select_input_file1) 
             self.dlg.outButton.clicked.connect(RemoveValues.select_input_file2) 
             self.dlg.helpButton.clicked.connect(RemoveValues.help) 
+            self.dlg.inputCombo.currentIndexChanged.connect(RemoveValues.indexChanged)
 
-        layers = QgsProject.instance().layerTreeRoot().children() 
-         # show the dialog
+        layers = QgsProject.instance().mapLayers().values()
+        self.dlg.inputCombo.clear() 
+        self.dlg.inputCombo.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        RemoveValues.indexChanged(self) 
+          # show the dialog
         self.dlg.show()
         # Run the dialog event loop
         result = self.dlg.exec_()
@@ -184,8 +237,24 @@ class RemoveValues:
         # See if OK was pressed
         if result:
 
-            inFile = self.dlg.inputRaster.text() 
+            selectedLayerIndex = self.dlg.inputCombo.currentIndex()
+            currentText = selfMT.dlg.inputCombo.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+
+            inFile = filename
             outFile = self.dlg.outputRaster.text()
+
+            plugin_dir = os.path.dirname(__file__)
+            gif_path = os.path.join(plugin_dir, "loading.gif")
+            self.loading_screen = LoadingScreenDlg(gif_path)  # init loading dlg
+            self.loading_screen.start_animation()  # start loading dlg
 
             if os.path.exists(outFile):
                 os.remove(outFile)
@@ -202,6 +271,8 @@ class RemoveValues:
                 RemoveValues.removeSingle(inFile, outFile)
             elif self.dlg.rangeButton.isChecked():
                 RemoveValues.removeRange(inFile, outFile)
+
+            self.loading_screen.stop_animation()
                 
             if os.path.exists(outFile):
                 fname = os.path.dirname(str(outFile))

@@ -67,9 +67,9 @@
   <widget class="QLabel" name="label_7">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>-20</x>
      <y>80</y>
-     <width>191</width>
+     <width>211</width>
      <height>20</height>
     </rect>
    </property>
@@ -80,6 +80,9 @@
    </property>
    <property name="text">
     <string>Output Coverage shapefile</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
   <widget class="QPushButton" name="pushButton_4">
@@ -95,28 +98,12 @@
     <string>...</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="lineEdit_1">
-   <property name="geometry">
-    <rect>
-     <x>200</x>
-     <y>20</y>
-     <width>561</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Arial</family>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>-10</x>
      <y>30</y>
-     <width>171</width>
+     <width>201</width>
      <height>20</height>
     </rect>
    </property>
@@ -127,6 +114,9 @@
    </property>
    <property name="text">
     <string>Input raster imagery File</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
   <widget class="QLineEdit" name="lineEdit_4">
@@ -181,6 +171,16 @@
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboBox">
+   <property name="geometry">
+    <rect>
+     <x>200</x>
+     <y>20</y>
+     <width>561</width>
+     <height>41</height>
+    </rect>
    </property>
   </widget>
  </widget>

@@ -91,6 +91,7 @@ class csv2grid_dialog(QtWidgets.QDialog):
         self.status_lable = status_lable
 
     def csv2grid_status_callback(self, percent_complete, lable):
+        return
         try:
             self.status_lable.setText(lable)
             message = str(int(percent_complete)) + "%"
@@ -117,7 +118,7 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
     def __init__(self, iface):
         csv2grid_dialog.__init__(self, iface)
         self.setupUi(self)
-        self.BtnApplyClose.button(QtWidgets.QDialogButtonBox.Close).setAutoDefault(True)
+        self.BtnApplyClose.button(QtWidgets.QDialogButtonBox.Cancel).setAutoDefault(True)
         self.csv2grid_set_status_bar(self.status,self.LblStatus)
         self.lsCSV.clear()
         self.txtError.clear()
@@ -125,7 +126,7 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
         self.pushButton.clicked.connect(self.selectcrs)
         self.pushButton_2.clicked.connect(self.selectcrs_2)
         self.lsCSV.currentRowChanged.connect(self.set_field_names)
-        self.BtnApplyClose.button(QtWidgets.QDialogButtonBox.Apply).clicked.connect(self.run)
+        self.BtnApplyClose.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(self.run)
         self.helpButton_2.clicked.connect(self.help)
         return
 
@@ -144,6 +145,7 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
             return
         self.longitude_field.clear()
         self.latitude_field.clear()
+        self.DepthZ.clear()
         self.longitude_field.addItems(header)
         self.latitude_field.addItems(header)
         self.DepthZ.addItems(header)
@@ -242,7 +244,18 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
         for index in range(self.lsCSV.count()):
             items.append(self.lsCSV.item(index))
         self.txtError.clear()
-        self.lsCSV.blockSignals(True)
+        selected = self.lsCSV.currentRow()
+        print(str(selected))
+        count = 0
+        for item in items:
+            #self.lsCSV.setCurrentRow(item_count)
+            input_csv_name = item.text()
+            if count == selected:
+                selectedCSV = input_csv_name
+            print(str(count)+" "+str(input_csv_name))
+            count = count +1
+        #selectedCSV = self.lsCSV.currentItem()
+        #self.lsCSV.blockSignals(True)
         self.LinInputFolder.setEnabled(False)
         self.BtnInputFolder.setEnabled(False)
         self.longitude_field.setEnabled(False)
@@ -263,25 +276,47 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
         mbox.setText("This process may take some time - hidden")
         mbox.setWindowTitle("This process may take some time")
         mbox.show()
-        for item in items:
-            self.lsCSV.setCurrentRow(item_count)
-            input_csv_name = item.text()
-            longitude_field = str(self.longitude_field.currentText())
-            latitude_field = str(self.latitude_field.currentText())
+        if self.Do_all.isChecked():
+            for item in items:
+                self.lsCSV.setCurrentRow(item_count)
+                input_csv_name = item.text()
+                print("ALL "+str(input_csv_name))
+                longitude_field = str(self.longitude_field.currentText())
+                latitude_field = str(self.latitude_field.currentText())
 
-            temp_file_name = item.text()
-            output_file_name = temp_file_name.replace(".csv", ".shp", 1)
+                temp_file_name = item.text()
+                output_file_name = temp_file_name.replace(".csv", ".shp", 1)
 
-            message = self.csv2grid_go(input_csv_name,  latitude_field, longitude_field, \
-                output_file_name, CRSin, CRSout, Zcolumn, self.csv2grid_status_callback)
-            if message:
-                error_count+=1
-                self.txtError.append(str(error_count)+ ". "+ input_csv_name + ": " + message)
-                continue
-            else:
-                item_count +=1
-                self.LblStatus.setText (str(item_count)+"/ "+ str(self.lsCSV.count()) + " files converted")
+                message = self.csv2grid_go(input_csv_name,  latitude_field, longitude_field, \
+                    output_file_name, CRSin, CRSout, Zcolumn, self.csv2grid_status_callback)
+                if message:
+                    error_count+=1
+                    self.txtError.append(str(error_count)+ ". "+ input_csv_name + ": " + message)
+                    continue
+                else:
+                    item_count +=1
+                    self.LblStatus.setText (str(item_count)+"/ "+ str(self.lsCSV.count()) + " files converted")
+        else:
+                self.lsCSV.setCurrentRow(selected)
+                input_csv_name = selectedCSV
+                print("ONE "+str(input_csv_name))
+                longitude_field = str(self.longitude_field.currentText())
+                latitude_field = str(self.latitude_field.currentText())
+
+                temp_file_name = selectedCSV
+                output_file_name = temp_file_name.replace(".csv", ".shp", 1)
+
+                message = self.csv2grid_go(input_csv_name,  latitude_field, longitude_field, \
+                    output_file_name, CRSin, CRSout, Zcolumn, self.csv2grid_status_callback)
+                if message:
+                    error_count+=1
+                    self.txtError.append(str(error_count)+ ". "+ input_csv_name + ": " + message)
+                else:
+                    self.LblStatus.setText (str(item_count)+"/ "+ str(self.lsCSV.count()) + " files converted")
+            
+
         mbox.close()
+        
         """
         self.lsCSV.blockSignals(False)
         self.LinInputFolder.setEnabled(True)
@@ -364,8 +399,22 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
         self.txtError.append("Point file created")
 
         del outfile
-        if shape_count > 10:
-            # Point file created - now for gridding
+        # convert from column of strings to reals
+        formul = ' to_real( "' + Zcolumn + '" )'
+        #print(formul)
+        result = processing.run("native:fieldcalculator", {'INPUT':tempfile0,'FIELD_NAME':'depth2','FIELD_TYPE':0,
+                                                  'FIELD_LENGTH':10,'FIELD_PRECISION':5,
+                                                  'FORMULA':formul,'OUTPUT':'TEMPORARY_OUTPUT'})
+        tempfile1 = result['OUTPUT']
+        processing.run("native:reprojectlayer", {'INPUT':tempfile1,'TARGET_CRS':CRSout,'OUTPUT':output_file_name})
+        #infile = QgsVectorLayer(output_file_name, "ogr")
+        fname = os.path.dirname(str(output_file_name))
+        infile = QgsVectorLayer(output_file_name, str(output_file_name[len(fname)+1:]))
+        if not self.Do_Grids.isChecked():
+            QgsProject.instance().addMapLayer(infile)
+        
+        # Point file created - now for gridding
+        if self.Do_Grids.isChecked():
             newdir = str(os.path.dirname(output_file_name) + "/tempMT")
             if not os.path.exists(newdir):
                 os.mkdir(newdir)
@@ -374,15 +423,6 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
             tempfile2 = newdir + "\\tempfile2.shp"
             tempfile3 = newdir + "\\tempfile3.shp"
             tempfile4 = newdir + "\\tempfile4.shp"
-            # convert from column of strings to reals
-            formul = ' to_real( "' + Zcolumn + '" )'
-            #print(formul)
-            result = processing.run("native:fieldcalculator", {'INPUT':tempfile0,'FIELD_NAME':'depth2','FIELD_TYPE':0,
-                                                      'FIELD_LENGTH':10,'FIELD_PRECISION':5,
-                                                      'FORMULA':formul,'OUTPUT':'TEMPORARY_OUTPUT'})
-            tempfile1 = result['OUTPUT']
-            processing.run("native:reprojectlayer", {'INPUT':tempfile1,'TARGET_CRS':CRSout,'OUTPUT':output_file_name})
-            infile = QgsVectorLayer(output_file_name, "ogr")
             self.txtError.append("Point file indexed")
             processing.run("native:createspatialindex", {'INPUT':output_file_name})
             index = QgsSpatialIndex(infile.getFeatures())

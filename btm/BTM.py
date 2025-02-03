@@ -51,11 +51,42 @@ import csv
 from xml.dom.minidom import parse
 import shutil
 
+class LoadingScreenDlg:
+    """Loading screen animation."""
+    from qgis.PyQt.QtWidgets import QDialog, QLabel 
+    from qgis.PyQt.QtGui import QMovie, QPalette, QColor
+
+    def __init__(self, gif_path):
+        self.dlg = self.QDialog()
+        self.dlg.setWindowTitle("Please Wait")
+        self.dlg.setWindowModality(False)
+        self.dlg.setFixedSize(200, 100)
+        pal = self.QPalette()
+        role = self.QPalette.Background
+        pal.setColor(role, self.QColor(255, 255, 255))
+        self.dlg.setPalette(pal)
+        self.label_animation = self.QLabel(self.dlg)
+        self.movie = self.QMovie(gif_path)
+        self.label_animation.setMovie(self.movie)
+
+    def start_animation(self):
+        self.movie.start()
+        self.dlg.show()
+        return
+
+    def stop_animation(self):
+        self.movie.stop()
+        self.dlg.done(0)       
+
 class BTM:
     """QGIS Plugin Implementation."""
 
     def select_input_file(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input raster Bathymetry file ","", '*.img *.tif') # added
+        # Add layer to frame, find last in list, add to end of list, create all new lists
+        selfMT.dlg.BathyInput.clear() 
+        selfMT.dlg.BathyInput.insertItem(0,filename)
+        selfMT.dlg.BathyInput.setCurrentIndex(0)
         #autofill
         BroadInner = selfMT.dlg.BroadInner.text()
         if BroadInner == "":
@@ -81,10 +112,20 @@ class BTM:
             selfMT.dlg.exists2.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists2.setText("")
-        selfMT.dlg.BathyInput.setText(filename) # added
        
-    def updateName(self): 
-        filename = selfMT.dlg.BathyInput.text()
+    def indexChanged(self): 
+        selectedLayerIndex = selfMT.dlg.BathyInput.currentIndex()
+        currentText = selfMT.dlg.BathyInput.currentText()
+        layers = QgsProject.instance().mapLayers().values()
+        a=0
+        filename="NULL"
+        for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+            if a == selectedLayerIndex:
+                filename = str(layer.source())
+            a=a+1
+        filename1= selfMT.dlg.OutputPoly.text()[0:len(currentText[:-4])]
+        if filename1[0:3] == "_BT" or currentText[:-4] == filename1[0:len(currentText[:-4])]:
+            filename = currentText
         #autofill
         BroadInner = selfMT.dlg.BroadInner.text()
         if BroadInner == "":
@@ -163,13 +204,18 @@ class BTM:
             self.dlg.DictFile.clicked.connect(BTM.select_dictionary_file) # added
             self.dlg.OutFileRaster.clicked.connect(BTM.select_outputRaster_file) # added
             self.dlg.OutFilePoly.clicked.connect(BTM.select_outputPoly_file) # added
-            self.dlg.BroadInner.textChanged.connect(BTM.updateName) 
-            self.dlg.BroadOuter.textChanged.connect(BTM.updateName) 
-            self.dlg.FineInner.textChanged.connect(BTM.updateName) 
-            self.dlg.FineOuter.textChanged.connect(BTM.updateName) 
+            self.dlg.BroadInner.textChanged.connect(BTM.indexChanged) 
+            self.dlg.BroadOuter.textChanged.connect(BTM.indexChanged) 
+            self.dlg.FineInner.textChanged.connect(BTM.indexChanged) 
+            self.dlg.FineOuter.textChanged.connect(BTM.indexChanged) 
             self.dlg.helpButton.clicked.connect(BTM.help) 
+            self.dlg.BathyInput.currentIndexChanged.connect(BTM.indexChanged)
         # Fetch the currently loaded layers
-        layers = QgsProject.instance().layerTreeRoot().children() # added
+        layers = QgsProject.instance().mapLayers().values()
+        self.dlg.BathyInput.clear() 
+        # Populate the comboBox with names of all the loaded layer   
+        self.dlg.BathyInput.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        BTM.indexChanged(self) 
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
@@ -177,7 +223,17 @@ class BTM:
 
         # See if OK was pressed
         if result:
-            bathy                 = self.dlg.BathyInput.text()  
+            selectedLayerIndex = self.dlg.BathyInput.currentIndex()
+            currentText = selfMT.dlg.BathyInput.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+            bathy = filename
             out_dictionary        = self.dlg.Dictionary.text()  
             output_zones          = self.dlg.OutputRaster.text()  
             output_zones_Poly     = self.dlg.OutputPoly.text()  
@@ -224,6 +280,11 @@ class BTM:
             print(str(DeleteInter))
             print(str(InvertDepths))
             print(str(output_zones_Poly))
+            
+            plugin_dir = os.path.dirname(__file__)
+            gif_path = os.path.join(plugin_dir, "loading.gif")
+            self.loading_screen = LoadingScreenDlg(gif_path)  # init loading dlg
+            self.loading_screen.start_animation()  # start loading dlg
             
             # if no dictionary provided make one's own
             basePath = str(os.path.dirname(bathy))
@@ -315,6 +376,8 @@ class BTM:
             processing.run("native:renametablefield", {'INPUT':temp6,'FIELD':'Dict_Fie_1','NEW_NAME':'Geomorphol','OUTPUT':temp9})
             processing.run("native:multiparttosingleparts", {'INPUT':temp9,'OUTPUT':output_zones_Poly})
         
+            self.loading_screen.stop_animation()
+
             fname = os.path.dirname(str(output_zones_Poly))
             vlayer = QgsVectorLayer(str(output_zones_Poly), str(output_zones_Poly[len(fname)+1:]), "ogr")
             QgsProject.instance().addMapLayer(vlayer)

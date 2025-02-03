@@ -53,11 +53,15 @@ class EstimateCoverage:
 
     def select_input_file1(self): # added
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input raster background bathymetry","", '*.img *.tif') # added
-        selfMT.dlg.lineEdit_1.setText(filename) # added
+        selfMT.dlg.comboBox.clear() 
+        selfMT.dlg.comboBox.insertItem(0,filename)
+        selfMT.dlg.comboBox.setCurrentIndex(0)
       
     def select_input_file2(self): # added
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input line of track","", '*.shp') # added
-        selfMT.dlg.lineEdit_2.setText(filename) # added
+        selfMT.dlg.comboBox_2.clear() 
+        selfMT.dlg.comboBox_2.insertItem(0,filename)
+        selfMT.dlg.comboBox_2.setCurrentIndex(0)
         #autofill
         lineEdit_3 = selfMT.dlg.lineEdit_3.text()
         if lineEdit_3 == "":
@@ -70,15 +74,26 @@ class EstimateCoverage:
             selfMT.dlg.exists1.setText("")
         
     def select_input_file4(self): # added
-        filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Define output coveragLete polygon","", '*.shp') # added
+        filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Output coverage polygon","", '*.shp') # added
         selfMT.dlg.lineEdit_4.setText(filename) # added
         if os.path.exists(filename):
             selfMT.dlg.exists1.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists1.setText("")
  
-    def updateName(self): 
-        filename = selfMT.dlg.lineEdit_2.text()
+    def indexChanged(self): 
+        selectedLayerIndex = selfMT.dlg.comboBox_2.currentIndex()
+        currentText = selfMT.dlg.comboBox_2.currentText()
+        layers = QgsProject.instance().mapLayers().values()
+        a=0
+        filename="NULL"
+        for layer in (layer1 for layer1 in layers if str(layer1.type())== "0" or str(layer1.type())== "LayerType.Vector"):
+            if a == selectedLayerIndex:
+                filename = str(layer.source())
+            a=a+1
+        filename1= selfMT.dlg.lineEdit_4.text()[0:len(currentText[:-4])]
+        if filename1[0:3] == "_co" or currentText[:-4] == filename1[0:len(currentText[:-4])]:
+            filename = currentText
         #autofill
         lineEdit_3 = selfMT.dlg.lineEdit_3.text()
         if lineEdit_3 == "":
@@ -109,12 +124,23 @@ class EstimateCoverage:
             self.dlg.pushButton_1.clicked.connect(EstimateCoverage.select_input_file1) # added
             self.dlg.pushButton_2.clicked.connect(EstimateCoverage.select_input_file2) # added
             self.dlg.pushButton_4.clicked.connect(EstimateCoverage.select_input_file4) # added
-            self.dlg.lineEdit_3.textChanged.connect(EstimateCoverage.updateName) 
+            self.dlg.lineEdit_3.textChanged.connect(EstimateCoverage.indexChanged) 
             self.dlg.helpButton.clicked.connect(EstimateCoverage.help) 
+            self.dlg.comboBox_2.currentIndexChanged.connect(EstimateCoverage.indexChanged)
 
         # Fetch the currently loaded layers
         layers = QgsProject.instance().layerTreeRoot().children() # added
-            
+        layers = QgsProject.instance().mapLayers().values()
+        self.dlg.comboBox.clear() 
+        # Populate the comboBox with names of all the raster loaded layers  (type="1")
+        self.dlg.comboBox.addItems([layer.name() for layer in layers if str(layer.type())== "1"])
+        self.dlg.comboBox.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        self.dlg.comboBox_2.clear() 
+        # Populate the comboBox with names of all the raster loaded layers  (type="1")
+        self.dlg.comboBox_2.addItems([layer.name() for layer in layers if str(layer.type())== "0"])
+        self.dlg.comboBox_2.addItems([layer.name() for layer in layers if str(layer.type())== "0" or str(layer.type())== "LayerType.Vector"])
+        EstimateCoverage.indexChanged(self) 
+             
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
@@ -123,9 +149,31 @@ class EstimateCoverage:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
+            selectedLayerIndex = self.dlg.comboBox.currentIndex()
+            currentText = selfMT.dlg.comboBox.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+            inputRaster = filename
             
-            inputRaster = self.dlg.lineEdit_1.text()  
-            tracklines = self.dlg.lineEdit_2.text()  
+            selectedLayerIndex = self.dlg.comboBox_2.currentIndex()
+            currentText = selfMT.dlg.comboBox_2.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "0" or str(layer1.type())== "LayerType.Vector"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+
+            tracklines = filename 
+            
             swathAng = self.dlg.lineEdit_3.text()            
             outStencil = self.dlg.lineEdit_4.text()
             if os.path.exists(outStencil):

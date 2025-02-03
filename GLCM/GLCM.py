@@ -48,17 +48,37 @@ from qgis.core import QgsRasterBandStats
 
 import processing
 
+class LoadingScreenDlg:
+    """Loading screen animation."""
+    from qgis.PyQt.QtWidgets import QDialog, QLabel 
+    from qgis.PyQt.QtGui import QMovie, QPalette, QColor
+
+    def __init__(self, gif_path):
+        self.dlg = self.QDialog()
+        self.dlg.setWindowTitle("Please Wait")
+        self.dlg.setWindowModality(False)
+        self.dlg.setFixedSize(200, 100)
+        pal = self.QPalette()
+        role = self.QPalette.Background
+        pal.setColor(role, self.QColor(255, 255, 255))
+        self.dlg.setPalette(pal)
+        self.label_animation = self.QLabel(self.dlg)
+        self.movie = self.QMovie(gif_path)
+        self.label_animation.setMovie(self.movie)
+
+    def start_animation(self):
+        self.movie.start()
+        self.dlg.show()
+        return
+
+    def stop_animation(self):
+        self.movie.stop()
+        self.dlg.done(0)       
+
 class GLCM:
     """QGIS Plugin Implementation."""
-
+    """
     def __init__(self, iface):
-        """Constructor.
-
-        :param iface: An interface instance that will be passed to this class
-            which provides the hook by which you can manipulate the QGIS
-            application at run time.
-        :type iface: QgsInterface
-        """
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
@@ -85,16 +105,7 @@ class GLCM:
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
-        """Get the translation for a string using Qt translation API.
 
-        We implement this ourselves since we do not inherit QObject.
-
-        :param message: String for translation.
-        :type message: str, QString
-
-        :returns: Translated version of message.
-        :rtype: QString
-        """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('GLCM', message)
 
@@ -110,44 +121,6 @@ class GLCM:
         status_tip=None,
         whats_this=None,
         parent=None):
-        """Add a toolbar icon to the toolbar.
-
-        :param icon_path: Path to the icon for this action. Can be a resource
-            path (e.g. ':/plugins/foo/bar.png') or a normal file system path.
-        :type icon_path: str
-
-        :param text: Text that should be shown in menu items for this action.
-        :type text: str
-
-        :param callback: Function to be called when the action is triggered.
-        :type callback: function
-
-        :param enabled_flag: A flag indicating if the action should be enabled
-            by default. Defaults to True.
-        :type enabled_flag: bool
-
-        :param add_to_menu: Flag indicating whether the action should also
-            be added to the menu. Defaults to True.
-        :type add_to_menu: bool
-
-        :param add_to_toolbar: Flag indicating whether the action should also
-            be added to the toolbar. Defaults to True.
-        :type add_to_toolbar: bool
-
-        :param status_tip: Optional text to show in a popup when mouse pointer
-            hovers over the action.
-        :type status_tip: str
-
-        :param parent: Parent widget for the new action. Defaults None.
-        :type parent: QWidget
-
-        :param whats_this: Optional text to show in the status bar when the
-            mouse pointer hovers over the action.
-
-        :returns: The action that was created. Note that the action is also
-            added to self.actions list.
-        :rtype: QAction
-        """
 
         icon = QIcon(icon_path)
         action = QAction(icon, text, parent)
@@ -174,8 +147,7 @@ class GLCM:
         return action
 
     def initGui(self):
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
+ 
         icon_path = ':/plugins/GLCM/icon.png'
         self.add_action(
             icon_path,
@@ -188,14 +160,13 @@ class GLCM:
 
 
     def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
             self.iface.removePluginMenu(
                 self.tr(u'&GLCM'),
                 action)
             self.iface.removeToolBarIcon(action)
 
-
+    """
     def select_output_file(self): 
         filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output image file ","", '*.img') 
         selfMT.dlg.outputFile.setText(filename) 
@@ -206,7 +177,9 @@ class GLCM:
          
     def select_input_file(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input image file ","", '*.img *.tif') 
-        selfMT.dlg.inputFile.setText(filename) 
+        selfMT.dlg.inputCombo.clear() 
+        selfMT.dlg.inputCombo.insertItem(0,filename)
+        selfMT.dlg.inputCombo.setCurrentIndex(0)
         selectedLayerIndex = selfMT.dlg.GLCM_type.currentIndex()
         names = ["contrast","dissimilarity","homogeneity","energy","entropy","ASM","std","mean"]
         GLCM_type =names[selectedLayerIndex]
@@ -229,12 +202,23 @@ class GLCM:
         else:
             selfMT.dlg.exists1.setText("")
         
-    def updateName(self): 
-        filename = selfMT.dlg.inputFile.text()
+    def indexChanged(self): 
+        selectedLayerIndex = selfMT.dlg.inputCombo.currentIndex()
+        currentText = selfMT.dlg.inputCombo.currentText()
+        layers = QgsProject.instance().mapLayers().values()
+        a=0
+        filename="NULL"
+        for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+            if a == selectedLayerIndex:
+                filename = str(layer.source())
+            a=a+1
+        filename1= selfMT.dlg.outputFile.text()[0:len(currentText[:-4])]
+        if filename1[0:3] == "_co" or currentText[:-4] == filename1[0:len(currentText[:-4])]:
+            filename = currentText
         #autofill
-        selectedLayerIndex = selfMT.dlg.GLCM_type.currentIndex()
+        currentGLCMIndex = selfMT.dlg.GLCM_type.currentIndex()
         names = ["contrast","dissimilarity","homogeneity","energy","entropy","ASM","std","mean"]
-        GLCM_type =names[selectedLayerIndex]
+        GLCM_type =names[currentGLCMIndex]
         blocksize = selfMT.dlg.blocksize.text()
         if blocksize == "":
             blocksize = "5"
@@ -265,7 +249,7 @@ class GLCM:
         import random
         import shutil
         import math
-        #from marinetools.GLCM.GLCM_dialog import GLCMDialog
+        from marinetools.GLCM.GLCM_dialog import GLCMDialog
         global selfMT
 
         # Create the dialog with elements (after translation) and keep reference
@@ -274,19 +258,25 @@ class GLCM:
             self.first_start = False
             self.dlg = GLCMDialog()
             selfMT = self
-            self.dlg.outputFileDir.clicked.connect(GLCM.select_output_file) 
             self.dlg.inputFileDir.clicked.connect(GLCM.select_input_file) 
-            self.dlg.GLCM_type.currentIndexChanged.connect(GLCM.updateName) 
-            self.dlg.blocksize.textChanged.connect(GLCM.updateName) 
-            self.dlg.sampsize.textChanged.connect(GLCM.updateName) 
-            self.dlg.levels.textChanged.connect(GLCM.updateName) 
-            self.dlg.angle.textChanged.connect(GLCM.updateName) 
+            self.dlg.outputFileDir.clicked.connect(GLCM.select_output_file) 
+            self.dlg.GLCM_type.currentIndexChanged.connect(GLCM.indexChanged) 
+            self.dlg.blocksize.textChanged.connect(GLCM.indexChanged) 
+            self.dlg.sampsize.textChanged.connect(GLCM.indexChanged) 
+            self.dlg.levels.textChanged.connect(GLCM.indexChanged) 
+            self.dlg.angle.textChanged.connect(GLCM.indexChanged) 
             self.dlg.helpButton.clicked.connect(GLCM.help) 
+            self.dlg.inputCombo.currentIndexChanged.connect(GLCM.indexChanged)
 
+        
+        layers = QgsProject.instance().mapLayers().values()
+        self.dlg.inputCombo.clear() 
+        self.dlg.inputCombo.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        GLCM.indexChanged(self) 
         names = ["contrast","dissimilarity","homogeneity","energy","entropy","ASM","std","mean"]
         self.dlg.GLCM_type.clear() 
         # Populate the comboBox with names of all GLCM types   
-        self.dlg.GLCM_type.addItems(names) 
+        self.dlg.GLCM_type.addItems(names)
 
         # show the dialog
         self.dlg.show()
@@ -294,14 +284,24 @@ class GLCM:
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            inputFile = self.dlg.inputFile.text()
+            selectedLayerIndex = self.dlg.inputCombo.currentIndex()
+            currentText = selfMT.dlg.inputCombo.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+            inputFile = filename
             outputFile = self.dlg.outputFile.text()
             if outputFile == "":
                 self.iface.messageBar().pushMessage("\nNo outputfile was given")
                 return
-            selectedLayerIndex = self.dlg.GLCM_type.currentIndex()
+            currentGLCMIndex = self.dlg.GLCM_type.currentIndex()
             names = ["contrast","dissimilarity","homogeneity","energy","entropy","ASM","std","mean"]
-            GLCM_type =names[selectedLayerIndex]
+            GLCM_type =names[currentGLCMIndex]
  
             blocksize = self.dlg.blocksize.text()
             if blocksize == "":
@@ -315,28 +315,38 @@ class GLCM:
             testangle = self.dlg.angle.text()
             if testangle == "":
                 testangle = "0"
-
-            try:
-                import skimage
-                from skimage.feature import graycomatrix, graycoprops
-                from skimage import data
-            except:
-                import pip
-                pip.main(['install','scikit-image'])
-                import skimage
-
-                from skimage.feature import graycomatrix, graycoprops
-                from skimage import data
                 
             try:
                 import numpy as np
                 import cv2
             except:
                 import pip
-                pip.main(['install','opencv-python'])
+                import subprocess,sys
+                subprocess.call('python3 -m pip install opencv-python')
                 import numpy as np
                 import cv2
 
+            try:
+                import skimage
+                from skimage.feature import graycomatrix, graycoprops
+                from skimage import data
+            except:
+                import pip
+                import subprocess,sys
+                subprocess.call('python3 -m pip install scikit-image')
+                
+            try:
+                import skimage
+                from skimage.feature import graycomatrix, graycoprops
+                from skimage import data
+            except:
+                import pip
+                import subprocess,sys
+                subprocess.call('python3 -m pip install skimage')
+                import skimage
+                from skimage.feature import graycomatrix, graycoprops
+                from skimage import data
+                
 
             infile = QgsRasterLayer(inputFile)
             crs = infile.crs()
@@ -352,8 +362,13 @@ class GLCM:
             levels= int(greylevels)
             angle = int(testangle)
             mi, ma = 0, 255
+            
+            plugin_dir = os.path.dirname(__file__)
+            gif_path = os.path.join(plugin_dir, "loading.gif")
+            self.loading_screen = LoadingScreenDlg(gif_path)  # init loading dlg
+            self.loading_screen.start_animation()  # start loading dlg
 
-            img = data.camera()
+            #img = data.camera()
             import osgeo
             from osgeo import gdal
             ds = gdal.Open(myRaster)
@@ -384,7 +399,9 @@ class GLCM:
             if GLCM_type == "mean":
                 glcm_mean = GLCM.fast_glcm_mean(img, mi, ma, levels, ks, distance, angle)
                 GLCM.NumPyArrayToRaster(glcm_mean, inputFile, outputFile)
-        
+
+            self.loading_screen.stop_animation()
+                    
         pass
 
 

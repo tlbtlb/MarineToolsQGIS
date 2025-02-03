@@ -47,12 +47,41 @@ from qgis.core import QgsRasterLayer
 from qgis.core import QgsRasterBandStats
 import processing
 
+class LoadingScreenDlg:
+    """Loading screen animation."""
+    from qgis.PyQt.QtWidgets import QDialog, QLabel 
+    from qgis.PyQt.QtGui import QMovie, QPalette, QColor
+
+    def __init__(self, gif_path):
+        self.dlg = self.QDialog()
+        self.dlg.setWindowTitle("Please Wait")
+        self.dlg.setWindowModality(False)
+        self.dlg.setFixedSize(200, 100)
+        pal = self.QPalette()
+        role = self.QPalette.Background
+        pal.setColor(role, self.QColor(255, 255, 255))
+        self.dlg.setPalette(pal)
+        self.label_animation = self.QLabel(self.dlg)
+        self.movie = self.QMovie(gif_path)
+        self.label_animation.setMovie(self.movie)
+
+    def start_animation(self):
+        self.movie.start()
+        self.dlg.show()
+        return
+
+    def stop_animation(self):
+        self.movie.stop()
+        self.dlg.done(0)       
+
 class RasterCoverage:
     """QGIS Plugin Implementation."""
 
     def select_input_file1(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input bathymetry file ","", '*.img *.tif') 
-        selfMT.dlg.lineEdit_1.setText(filename) 
+        selfMT.dlg.comboBox.clear() 
+        selfMT.dlg.comboBox.insertItem(0,filename)
+        selfMT.dlg.comboBox.setCurrentIndex(0)
         autoPoly = filename[:-4]+"_coverage.shp"
         selfMT.dlg.lineEdit_4.setText(autoPoly)
         if os.path.exists(autoPoly):
@@ -64,6 +93,27 @@ class RasterCoverage:
         filename, _filter = QFileDialog.getSaveFileName(selfMT.dlg, "Select output contours shapefile","", '*.shp') 
         selfMT.dlg.lineEdit_4.setText(filename) 
         if os.path.exists(filename):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
+
+    def indexChanged(self): 
+        selectedLayerIndex = selfMT.dlg.comboBox.currentIndex()
+        currentText = selfMT.dlg.comboBox.currentText()
+        layers = QgsProject.instance().mapLayers().values()
+        a=0
+        filename="NULL"
+        for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+            if a == selectedLayerIndex:
+                filename = str(layer.source())
+            a=a+1
+        filename1= selfMT.dlg.lineEdit_4.text()[0:len(currentText[:-4])]
+        if filename1[0:3] == "_co" or currentText[:-4] == filename1[0:len(currentText[:-4])]:
+            filename = currentText
+        #autofill
+        autoPoly = filename[:-4]+"_coverage.shp"
+        selfMT.dlg.lineEdit_4.setText(autoPoly)
+        if os.path.exists(autoPoly):
             selfMT.dlg.exists1.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists1.setText("")
@@ -88,9 +138,14 @@ class RasterCoverage:
             self.dlg.pushButton_1.clicked.connect(RasterCoverage.select_input_file1) 
             self.dlg.pushButton_4.clicked.connect(RasterCoverage.select_input_file4) 
             self.dlg.helpButton.clicked.connect(RasterCoverage.help) 
+            self.dlg.comboBox.currentIndexChanged.connect(RasterCoverage.indexChanged)
            
         # Fetch the currently loaded layers
-        layers = QgsProject.instance().layerTreeRoot().children() 
+        layers = QgsProject.instance().mapLayers().values()
+        self.dlg.comboBox.clear() 
+        # Populate the comboBox with names of all the raster loaded layers  (type="1")
+        self.dlg.comboBox.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        RasterCoverage.indexChanged(self) 
         
         # show the dialog
         self.dlg.show()
@@ -101,18 +156,50 @@ class RasterCoverage:
 
         if result:
             import glob
-            filename1 = self.dlg.lineEdit_1.text()  
+            selectedLayerIndex = self.dlg.comboBox.currentIndex()
+            currentText = selfMT.dlg.comboBox.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+
+            filename1 = filename 
             filename4 = self.dlg.lineEdit_4.text()  
+
             if os.path.exists(filename4):
                 os.remove(filename4)
-             
-            result = processing.run("gdal:polygonize", {'INPUT':filename1,'BAND':1,'FIELD':'DN','EIGHT_CONNECTEDNESS':False,'EXTRA':'','OUTPUT':'TEMPORARY_OUTPUT'})
+            print("Input file = "+str(filename1))
+                  
+            plugin_dir = os.path.dirname(__file__)
+            gif_path = os.path.join(plugin_dir, "loading.gif")
+            self.loading_screen = LoadingScreenDlg(gif_path)  # init loading dlg
+            self.loading_screen.start_animation()  # start loading dlg
+            
+            #take the file and make it usable by raster calculator
+            tempName = os.path.split(filename1)[1]
+            name = tempName.split('.')[0]
+            layerRef = name + '@1'
+
+            expr = '"'+ layerRef + '" * 0 + 1'
+            infile = QgsRasterLayer(filename1)
+            crs = infile.crs()
+            extent = infile.extent()
+            result = processing.run("native:rastercalc", {'LAYERS':filename1,'EXPRESSION':expr,'EXTENT':None,
+                                                 'CELL_SIZE':None,'CRS':None,'OUTPUT':'TEMPORARY_OUTPUT'})
             polyCov = result['OUTPUT']
-            processing.run("native:aggregate", {'INPUT':polyCov,'GROUP_BY':'NULL','AGGREGATES':[{'aggregate': 'sum','delimiter': ',','input': '"fid"','length': 0,'name': 'fid','precision': 0,'sub_type': 0,'type': 4,'type_name': 'int8'},{'aggregate': 'sum','delimiter': ',','input': '"DN"','length': 0,'name': 'DN','precision': 0,'sub_type': 0,'type': 2,'type_name': 'integer'}],'OUTPUT':filename4})
+            result = processing.run("gdal:polygonize", {'INPUT':polyCov,'BAND':1,'FIELD':'DN',
+                                                        'EIGHT_CONNECTEDNESS':False,'EXTRA':'',
+                                                        'OUTPUT':filename4})
+
+            self.loading_screen.stop_animation()
             
             fname = os.path.dirname(str(filename4))
             vlayer = QgsVectorLayer(str(filename4), str(filename4[len(fname)+1:]), "ogr")
             QgsProject.instance().addMapLayer(vlayer)
-
+            
             pass
 

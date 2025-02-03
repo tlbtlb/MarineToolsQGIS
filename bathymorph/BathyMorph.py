@@ -23,7 +23,6 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
 from qgis.PyQt.QtWidgets import QAction,QFileDialog 
 from qgis.core import QgsProject 
 
@@ -49,12 +48,42 @@ import sys
 import traceback
 import os, glob
 
+class LoadingScreenDlg:
+    """Loading screen animation."""
+    from qgis.PyQt.QtWidgets import QDialog, QLabel 
+    from qgis.PyQt.QtGui import QMovie, QPalette, QColor
+
+    def __init__(self, gif_path):
+        self.dlg = self.QDialog()
+        self.dlg.setWindowTitle("Please Wait")
+        self.dlg.setWindowModality(False)
+        self.dlg.setFixedSize(200, 100)
+        pal = self.QPalette()
+        role = self.QPalette.Background
+        pal.setColor(role, self.QColor(255, 255, 255))
+        self.dlg.setPalette(pal)
+        self.label_animation = self.QLabel(self.dlg)
+        self.movie = self.QMovie(gif_path)
+        self.label_animation.setMovie(self.movie)
+
+    def start_animation(self):
+        self.movie.start()
+        self.dlg.show()
+        return
+
+    def stop_animation(self):
+        self.movie.stop()
+        self.dlg.done(0)       
+
 class BathyMorph:
     """QGIS Plugin Implementation."""
 
     def select_input_file1(self): 
         filename, _filter = QFileDialog.getOpenFileName(selfMT.dlg, "Select input bathymetry file ","", '*.img *.tif*') 
-        selfMT.dlg.lineEdit_1.setText(filename) 
+        # Add layer to frame, find last in list, add to end of list, create all new lists
+        selfMT.dlg.lineCombo1.clear() 
+        selfMT.dlg.lineCombo1.insertItem(0,filename)
+        selfMT.dlg.lineCombo1.setCurrentIndex(0)
         #autofill
         autoPoly = filename[:-4]+"_interp.img"
         selfMT.dlg.lineEdit_2.setText(autoPoly)
@@ -134,6 +163,56 @@ class BathyMorph:
             selfMT.dlg.exists7.setText("Existing file will be overwritten")
         else:
             selfMT.dlg.exists7.setText("")
+    def indexChanged(self): 
+        selectedLayerIndex = selfMT.dlg.lineCombo1.currentIndex()
+        currentText = selfMT.dlg.lineCombo1.currentText()
+        layers = QgsProject.instance().mapLayers().values()
+        a=0
+        filename="NULL"
+        for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+            if a == selectedLayerIndex:
+                filename = str(layer.source())
+            a=a+1
+        filename1= selfMT.dlg.lineEdit_2.text()[0:len(currentText[:-4])]
+        if filename1[0:3] == "_in" or currentText[:-4] == filename1[0:len(currentText[:-4])]:
+            filename = currentText
+        autoPoly = filename[:-4]+"_interp.img"
+        selfMT.dlg.lineEdit_2.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists1.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists1.setText("")
+        autoPoly = filename[:-4]+"_slope.img"
+        selfMT.dlg.lineEdit_3.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists2.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists2.setText("")
+        autoPoly = filename[:-4]+"_contours.shp"
+        selfMT.dlg.lineEdit_4.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists5.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists5.setText("")
+        autoPoly = filename[:-4]+"_roughness.img"
+        selfMT.dlg.lineEdit_5.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists3.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists3.setText("")
+        autoPoly = filename[:-4]+"_hires.img"
+        selfMT.dlg.lineEdit_6.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists4.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists4.setText("")
+        autoPoly = filename[:-4]+"_BPI.img"
+        selfMT.dlg.lineEdit_7.setText(autoPoly)
+        if os.path.exists(autoPoly):
+            selfMT.dlg.exists7.setText("Existing file will be overwritten")
+        else:
+            selfMT.dlg.exists7.setText("")
+
     def help(self): 
         import webbrowser
         import marinetools
@@ -160,10 +239,18 @@ class BathyMorph:
             self.dlg.pushButton_5.clicked.connect(BathyMorph.select_input_file5) 
             self.dlg.pushButton_6.clicked.connect(BathyMorph.select_input_file6) 
             self.dlg.pushButton_7.clicked.connect(BathyMorph.select_input_file7) 
+            self.dlg.lineCombo1.currentIndexChanged.connect(BathyMorph.indexChanged)
             self.dlg.helpButton.clicked.connect(BathyMorph.help) 
             
         # Fetch the currently loaded layers
         layers = QgsProject.instance().layerTreeRoot().children() 
+        layers = QgsProject.instance().mapLayers().values()
+        # Clear the contents of the comboBox from previous runs
+        # self.dlg = MBES_SegmentationDialog()
+        self.dlg.lineCombo1.clear() 
+        # Populate the comboBox with names of all the loaded layer   
+        self.dlg.lineCombo1.addItems([layer.name() for layer in layers if str(layer.type())== "1" or str(layer.type())== "LayerType.Raster"])
+        BathyMorph.indexChanged(self) 
         
         # show the dialog
         self.dlg.show()
@@ -174,7 +261,17 @@ class BathyMorph:
 
         if result:
             import glob
-            filename1 = self.dlg.lineEdit_1.text()  
+            selectedLayerIndex = self.dlg.lineCombo1.currentIndex()
+            currentText = selfMT.dlg.lineCombo1.currentText()
+            layers = QgsProject.instance().mapLayers().values()
+            a=0
+            for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
+                if a == selectedLayerIndex:
+                    filename = str(layer.source())
+                a=a+1
+            if currentText not in filename:
+                filename = currentText
+            filename1 = filename
             filename2 = self.dlg.lineEdit_2.text()  
             filename3 = self.dlg.lineEdit_3.text()  
             filename4 = self.dlg.lineEdit_4.text()  
@@ -193,6 +290,11 @@ class BathyMorph:
                 os.remove(filename6)
             if os.path.exists(filename7):
                 os.remove(filename7)
+            plugin_dir = os.path.dirname(__file__)
+            gif_path = os.path.join(plugin_dir, "loading.gif")
+            self.loading_screen = LoadingScreenDlg(gif_path)  # init loading dlg
+            self.loading_screen.start_animation()  # start loading dlg
+
 
             Smooth = self.dlg.SmoothingFactor.text()
             Interval = self.dlg.ContourInterval.text()
@@ -356,6 +458,8 @@ class BathyMorph:
                 vlayer = QgsRasterLayer(str(filename7), str(filename7[len(fname)+1:]))
                 QgsProject.instance().addMapLayer(vlayer)
                 
+            self.loading_screen.stop_animation()
+
             try:
                 os.rmdir(newdir)
             except:
