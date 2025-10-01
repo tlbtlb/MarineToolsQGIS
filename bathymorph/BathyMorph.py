@@ -42,6 +42,7 @@ from qgis.core import QgsVectorLayer
 from qgis.core import (QgsSymbol,QgsSimpleFillSymbolLayer,QgsRendererCategory,QgsCategorizedSymbolRenderer)
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsRasterBandStats
+from qgis.core import QgsSingleBandGrayRenderer,QgsContrastEnhancement
 
 import processing
 import sys
@@ -265,6 +266,7 @@ class BathyMorph:
             currentText = selfMT.dlg.lineCombo1.currentText()
             layers = QgsProject.instance().mapLayers().values()
             a=0
+            filename="NULL"
             for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
                 if a == selectedLayerIndex:
                     filename = str(layer.source())
@@ -272,29 +274,20 @@ class BathyMorph:
             if currentText not in filename:
                 filename = currentText
             filename1 = filename
+            
+            # Test input file to find if supported 
+            from marinetools.fileTest import fileTest
+            filename1 = fileTest.main(filename1,"raster")
+            if filename1[0:5] == "Error":
+                print(filename1)
+                return
+            
             filename2 = self.dlg.lineEdit_2.text()  
             filename3 = self.dlg.lineEdit_3.text()  
             filename4 = self.dlg.lineEdit_4.text()  
             filename5 = self.dlg.lineEdit_5.text()  
             filename6 = self.dlg.lineEdit_6.text()
             filename7 = self.dlg.lineEdit_7.text()
-            if os.path.exists(filename2):
-                os.remove(filename2)
-            if os.path.exists(filename3):
-                os.remove(filename3)
-            if os.path.exists(filename4):
-                os.remove(filename4)
-            if os.path.exists(filename5):
-                os.remove(filename5)
-            if os.path.exists(filename6):
-                os.remove(filename6)
-            if os.path.exists(filename7):
-                os.remove(filename7)
-            plugin_dir = os.path.dirname(__file__)
-            gif_path = os.path.join(plugin_dir, "loading.gif")
-            self.loading_screen = LoadingScreenDlg(gif_path)  # init loading dlg
-            self.loading_screen.start_animation()  # start loading dlg
-
 
             Smooth = self.dlg.SmoothingFactor.text()
             Interval = self.dlg.ContourInterval.text()
@@ -339,35 +332,74 @@ class BathyMorph:
                 DoStandardise=1
             else:
                 DoStandardise=0
-             
+
+            plugin_dir = os.path.dirname(__file__)
+            gif_path = os.path.join(plugin_dir, "loading.gif")
+            self.loading_screen = LoadingScreenDlg(gif_path)  # init loading dlg
+            self.loading_screen.start_animation()  # start loading dlg
+   
             newdir = str(os.path.dirname(filename1) + "/tempMT")
             if not os.path.exists(newdir):
                 os.mkdir(newdir)
-            
+
             alphabet = 'ZYXWVUTSRQPONMLKJIHGFEDCBA0987654321'
             rand = alphabet[random.randint(1,25)] + alphabet[random.randint(1,35)] + alphabet[random.randint(1,35)] + alphabet[random.randint(1,35)]
+            #Print file report
+            txtFile = open(str(filename1[:-4]) + "_BathyMorph_Info.txt", "w")
+            txtFile.write("Script: Bathynetry Morphometry" "\n")
+            txtFile.write("\n")
+            txtFile.write("Input DEM: " + os.path.basename(filename1) + "\n")                
+            txtFile.write("\n")
             
             if DoInterp:
                 # Interpolate output to filename2
+                if os.path.exists(filename2):
+                    os.remove(filename2)
                 newInterp = filename2
                 processing.run("gdal:fillnodata", {'INPUT':filename1,'BAND':1,'DISTANCE':Smooth,'ITERATIONS':0,'NO_MASK':False,'MASK_LAYER':None,'OPTIONS':'','EXTRA':'','OUTPUT':filename2})
+                txtFile.write("Interpolated file     : " + str(newInterp) + "\n")
+                txtFile.write("Interpolation distance: " + str(Smooth) + "\n")
+                txtFile.write("\n")
             else:
                 newInterp = filename1
 
             if DoSlope:
                 # Calculate Slope output to filename3 but use newInterp
+                if os.path.exists(filename3):
+                    os.remove(filename3)
                 processing.run("native:slope", {'INPUT':newInterp,'Z_FACTOR':1,'OUTPUT':filename3})
+                txtFile.write("Slope file created   : " + str(filename3) + "\n")
+                txtFile.write("\n")
                 fname = os.path.dirname(str(filename3))
-                vlayer = QgsRasterLayer(str(filename3), str(filename3[len(fname)+1:]))
+                vlayer = QgsRasterLayer(str(filename3), str(filename3[len(fname)+1:-4]))
                 QgsProject.instance().addMapLayer(vlayer)
                 
+                renderer=vlayer.renderer()
+                provider=vlayer.dataProvider()
+                GrayRenderer = QgsSingleBandGrayRenderer(provider,1) #create a new renderer
+                myType = renderer.dataType(1)
+                myEnhancement = QgsContrastEnhancement(myType)
+                contrast_enhancement = QgsContrastEnhancement.StretchToMinimumMaximum
+                myEnhancement.setContrastEnhancementAlgorithm(contrast_enhancement,True)
+                myEnhancement.setMinimumValue(0)   #Set the minimum 0
+                vlayerStats = vlayer.dataProvider().bandStatistics(1,QgsRasterBandStats.All)
+                vlayerMax = vlayerStats.maximumValue
+                myEnhancement.setMaximumValue(vlayerMax)
+                vlayer.setRenderer(GrayRenderer)
+                vlayer.renderer().setContrastEnhancement(myEnhancement)
+                vlayer.renderer().setGradient(1) # WhiteToBlack
+                vlayer.triggerRepaint()
+
+            
             if DoInterp:
                 fname = os.path.dirname(str(newInterp))
-                vlayer = QgsRasterLayer(str(newInterp), str(filename2[len(fname)+1:]))
+                vlayer = QgsRasterLayer(str(newInterp), str(filename2[len(fname)+1:-4]))
                 QgsProject.instance().addMapLayer(vlayer)
 
             if DoContours:
                 # make contours output to filename4 but use newInterp
+                if os.path.exists(filename4):
+                    os.remove(filename4)
                 dict = processing.run("native:rasterlayerproperties", {'INPUT':newInterp,'BAND':1})
                 cellsizeX = float(dict['PIXEL_WIDTH'])
                 cutoff = cellsizeX * 10.0
@@ -376,20 +408,29 @@ class BathyMorph:
                 result = processing.run("qgis:exportaddgeometrycolumns", {'INPUT':newContour1,'CALC_METHOD':0,'OUTPUT':'TEMPORARY_OUTPUT'})
                 newContour2 = result['OUTPUT']
                 processing.run("native:extractbyattribute", {'INPUT':newContour2,'FIELD':'length','OPERATOR':2,'VALUE':cutoff,'OUTPUT':filename4})
+                txtFile.write("Contour file created: " + str(filename4) + "\n")
+                txtFile.write("Contour interval    : " + str(Interval) + "m \n")
+                txtFile.write("\n")
                 fname = os.path.dirname(str(filename4))
-                vlayer = QgsVectorLayer(str(filename4), str(filename4[len(fname)+1:]), "ogr")
+                vlayer = QgsVectorLayer(str(filename4), str(filename4[len(fname)+1:-4]), "ogr")
                 QgsProject.instance().addMapLayer(vlayer)
 
             if DoRoughness:
                 # Calculate Roughness output to filename5 but use newInterp
+                if os.path.exists(filename5):
+                    os.remove(filename5)
                 newRoughness = newdir + "/newRoughness"+rand+".img"
                 processing.run("gdal:roughness", {'INPUT':newInterp,'BAND':1,'COMPUTE_EDGES':False,'OPTIONS':'','OUTPUT':filename5})
+                txtFile.write("Roughness file created: " + str(filename5) + "\n")
+                txtFile.write("\n")
                 fname = os.path.dirname(str(filename5))
-                vlayer = QgsRasterLayer(str(filename5), str(filename5[len(fname)+1:]))
+                vlayer = QgsRasterLayer(str(filename5), str(filename5[len(fname)+1:-4]))
                 QgsProject.instance().addMapLayer(vlayer)
 
             if DoHiRes:
                 # Make interpolated output to filename6 but use newInterp
+                if os.path.exists(filename6):
+                    os.remove(filename6)
                 newHiRes = newdir + "/newHiRes"+rand+".gpkg"
                 outTin = newdir + "/outTin"+rand+".img"
                 processing.run("native:pixelstopoints", {'INPUT_RASTER':newInterp,'RASTER_BAND':1,'FIELD_NAME':'VALUE','OUTPUT':newHiRes})
@@ -400,18 +441,26 @@ class BathyMorph:
                 crs = QgsVectorLayer(newdir + "/newHiRes"+rand+".gpkg").crs()
                 processing.run("qgis:tininterpolation", {'INTERPOLATION_DATA':expr,'METHOD':0,'EXTENT':extent,'PIXEL_SIZE':Resolution,'OUTPUT':outTin})
                 tempName = os.path.split(newInterp)[1]
-                name = tempName.split('.')[0]
+                if tempName.count('.') > 1:
+                    name = tempName[:-4] # remove file extension as filename has extra "." - hopefully just 3 letters
+                else:
+                    name = tempName.split('.')[0]
                 InRef = name + '@1'
                 tempName = os.path.split(outTin)[1]
                 name = tempName.split('.')[0]
                 TinRef = name + '@1'
                 expression = '"' + TinRef + '" * "' + InRef + '" / "' + InRef + '"'
-                processing.run("qgis:rastercalculator", {'EXPRESSION':expression,'LAYERS':[outTin],'CELLSIZE':None,'EXTENT':None,'CRS':None,'OUTPUT':filename6})
+                processing.run("qgis:rastercalculator", {'EXPRESSION':expression,'LAYERS':[outTin],'CELLSIZE':None,'EXTENT':None,'CRS':crs,'OUTPUT':filename6})
+                txtFile.write("High Res file created: " + str(filename6) + "\n")
+                txtFile.write("New resolution       : " + str(Resolution) + "m \n")
+                txtFile.write("\n")
                 fname = os.path.dirname(str(filename6))
-                vlayer = QgsRasterLayer(str(filename6), str(filename6[len(fname)+1:]))
+                vlayer = QgsRasterLayer(str(filename6), str(filename6[len(fname)+1:-4]))
                 QgsProject.instance().addMapLayer(vlayer)
                 
             if DoBPI:
+                if os.path.exists(filename7):
+                    os.remove(filename7)
                 temp1 = newdir + r"\\outer.img"
                 try:
                     remove_img_file(temp1)
@@ -445,7 +494,11 @@ class BathyMorph:
                     InputMean = stats["MEAN"]
                     InputStd = stats["STD_DEV"]
                     tempName = os.path.split(bathy_noStan)[1]
-                    name = tempName.split('.')[0]
+                    if tempName.count('.') > 1:
+                        name = tempName[:-4]
+                    else:
+                        name = tempName.split('.')[0]
+                    name = tempName
                     layerRef = name + '@1'
                     formula = '((("' + layerRef + '" - '+str(InputMean)+')/'+str(InputStd)+')*100.0)'
                     infile = QgsRasterLayer(newInterp)
@@ -454,11 +507,17 @@ class BathyMorph:
                     processing.run("qgis:rastercalculator", {'EXPRESSION':formula,'LAYERS':[bathy_noStan],'CELLSIZE':None,'EXTENT':extent,'CRS':None,'OUTPUT':filename7})
                 else:
                     processing.run("gdal:rastercalculator", {'INPUT_A':temp1,'BAND_A':1,'INPUT_B':temp2,'BAND_B':1,'INPUT_C':newInterp,'BAND_C':1,'FORMULA':formula,'OUTPUT':filename7})
+                    
+                txtFile.write("BPI file created: " + str(filename7) + "\n")
+                txtFile.write("BPI outer radius: " + str(outer) + "\n") 
+                txtFile.write("BPI inner radius: " + str(inner) + "\n")
+                txtFile.write("\n")
                 fname = os.path.dirname(str(filename7))
-                vlayer = QgsRasterLayer(str(filename7), str(filename7[len(fname)+1:]))
+                vlayer = QgsRasterLayer(str(filename7), str(filename7[len(fname)+1:-4]))
                 QgsProject.instance().addMapLayer(vlayer)
                 
             self.loading_screen.stop_animation()
+            txtFile.close()
 
             try:
                 os.rmdir(newdir)

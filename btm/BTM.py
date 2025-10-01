@@ -227,6 +227,7 @@ class BTM:
             currentText = selfMT.dlg.BathyInput.currentText()
             layers = QgsProject.instance().mapLayers().values()
             a=0
+            filename="NULL"
             for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
                 if a == selectedLayerIndex:
                     filename = str(layer.source())
@@ -234,6 +235,14 @@ class BTM:
             if currentText not in filename:
                 filename = currentText
             bathy = filename
+
+            # Test input file to find if supported 
+            from marinetools.fileTest import fileTest
+            bathy = fileTest.main(bathy,"raster")
+            if bathy[0:5] == "Error":
+                print(bathy)
+                return
+            
             out_dictionary        = self.dlg.Dictionary.text()  
             output_zones          = self.dlg.OutputRaster.text()  
             output_zones_Poly     = self.dlg.OutputPoly.text()  
@@ -280,6 +289,29 @@ class BTM:
             print(str(DeleteInter))
             print(str(InvertDepths))
             print(str(output_zones_Poly))
+            #Print file report
+            txtFile = open(str(output_zones_Poly[:-4]) + "_Info.txt", "w")
+            txtFile.write("Script: Benthic Terrain Modeller" "\n")
+            txtFile.write("\n")
+            txtFile.write("File Name:     " + str(output_zones_Poly) + "\n")
+            txtFile.write("Output Raster: " + str(output_zones) + "\n")
+            txtFile.write("Input DEM:     " + os.path.basename(bathy) + "\n")                
+            txtFile.write("\n")
+            txtFile.write("Broad-scale BPI inner radius: " + str(broad_bpi_inner_radius) + "\n")
+            txtFile.write("Broad-scale BPI outer radius: " + str(broad_bpi_outer_radius) + "\n")
+            txtFile.write("Fine-scale BPI inner radius:  " + str(fine_bpi_inner_radius) + "\n")
+            txtFile.write("Fine-scale BPI outer radius:  " + str(fine_bpi_outer_radius) + "\n")
+            txtFile.write("\n")
+            if DeleteInter == 1:
+                txtFile.write("Intermediate files have been deleted where possible\n")
+            else:
+                txtFile.write("Intermediate files have not been deleted\n")
+
+            if InvertDepths == 1:
+                txtFile.write("Depths have been inverted\n")
+            else:
+                txtFile.write("Depths have not been inverted\n")
+
             
             plugin_dir = os.path.dirname(__file__)
             gif_path = os.path.join(plugin_dir, "loading.gif")
@@ -329,6 +361,12 @@ class BTM:
                 rememberDict = basePath + r"\Dictionary.csv"
                 shutil.copyfile(out_dictionary,rememberDict)
                 BTM.remove_img_file(tempfile)
+            file = open(out_dictionary,"r") 
+            lines = file.read()
+            file.close()
+            txtFile.write("Classification Dictionary:    " + str(out_dictionary) + "\n")
+            txtFile.write(lines)
+            txtFile.close()
                 
             BTM.runMod(
                 input_bathymetry      =str(bathy),
@@ -379,7 +417,7 @@ class BTM:
             self.loading_screen.stop_animation()
 
             fname = os.path.dirname(str(output_zones_Poly))
-            vlayer = QgsVectorLayer(str(output_zones_Poly), str(output_zones_Poly[len(fname)+1:]), "ogr")
+            vlayer = QgsVectorLayer(str(output_zones_Poly), str(output_zones_Poly[len(fname)+1:-4]), "ogr")
             QgsProject.instance().addMapLayer(vlayer)
             BTM.colour_polygons_random(vlayer)
             if DeleteInter:
@@ -516,7 +554,10 @@ class BTM:
         InputMean = stats["MEAN"]
         InputStd = stats["STD_DEV"]
         tempName = os.path.split(bpi_raster)[1]
-        name = tempName.split('.')[0]
+        if tempName.count('.') > 1:
+            name = tempName[:-4]
+        else:
+            name = tempName.split('.')[0]
         layerRef = name + '@1'
 
         formula = "(((A - "+str(InputMean)+")/"+str(InputStd)+")*100.0)"

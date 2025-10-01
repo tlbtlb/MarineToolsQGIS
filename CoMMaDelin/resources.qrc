@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/CoMMa_Delineation" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>

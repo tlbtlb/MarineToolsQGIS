@@ -288,6 +288,7 @@ class GLCM:
             currentText = selfMT.dlg.inputCombo.currentText()
             layers = QgsProject.instance().mapLayers().values()
             a=0
+            filename="NULL"
             for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
                 if a == selectedLayerIndex:
                     filename = str(layer.source())
@@ -295,6 +296,14 @@ class GLCM:
             if currentText not in filename:
                 filename = currentText
             inputFile = filename
+
+            # Test input file to find if supported 
+            from marinetools.fileTest import fileTest
+            inputFile = fileTest.main(inputFile,"raster")
+            if inputFile[0:5] == "Error":
+                print(inputFile)
+                return
+
             outputFile = self.dlg.outputFile.text()
             if outputFile == "":
                 self.iface.messageBar().pushMessage("\nNo outputfile was given")
@@ -347,6 +356,23 @@ class GLCM:
                 from skimage.feature import graycomatrix, graycoprops
                 from skimage import data
                 
+            #Print file report
+            txtFile = open(str(OutputFilename[:-4]) + "_Info.txt", "w")
+            txtFile.write("Script: Grey Level Co-occurence Matrices" "\n")
+            txtFile.write("\n")
+            txtFile.write("File Name: " + str(outputFile) + "\n")
+            txtFile.write("Input File: " + os.path.basename(inputFile) + "\n")
+            txtFile.write("\n")
+
+            txtFile.write("Matrix used: " + GLCM_type + "\n")
+            txtFile.write("Sampling Box Size      : " + str(blocksize) + "\n")
+            txtFile.write("Sampling Distance      : " + str(sampsize) + "\n")
+            txtFile.write("No. of grey-levels     : " + str(greylevels) + "\n")
+            txtFile.write("Pixel pair angle       : " + str(testangle) + "\n")
+            txtFile.write("\n")
+
+            txtFile.close()
+
 
             infile = QgsRasterLayer(inputFile)
             crs = infile.crs()
@@ -643,7 +669,7 @@ class GLCM:
         ds = None
         dst_ds = None
         fname = os.path.dirname(str(output_file))
-        vlayer = QgsRasterLayer(str(output_file), str(output_file[len(fname)+1:]))
+        vlayer = QgsRasterLayer(str(output_file), str(output_file[len(fname)+1:-4]))
         QgsProject.instance().addMapLayer(vlayer)
         return
 

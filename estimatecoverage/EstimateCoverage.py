@@ -146,13 +146,13 @@ class EstimateCoverage:
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
+        
         if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
             selectedLayerIndex = self.dlg.comboBox.currentIndex()
             currentText = selfMT.dlg.comboBox.currentText()
             layers = QgsProject.instance().mapLayers().values()
             a=0
+            filename="NULL"
             for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
                 if a == selectedLayerIndex:
                     filename = str(layer.source())
@@ -187,6 +187,21 @@ class EstimateCoverage:
             newdir = str(os.path.dirname(tracklines) + "/tempMT")
             if not os.path.exists(newdir):
                 os.mkdir(newdir)
+                
+            #Print file report
+            txtFile = open(str(inputRaster[:-4]) + "_Info.txt", "w")
+            txtFile.write("Script: Estimate the coverage of New line" "\n")
+            txtFile.write("\n")
+            txtFile.write("File Name  : " + str(outStencil) + "\n")
+            txtFile.write("Input DEM  : " + os.path.basename(inputRaster) + "\n")
+            txtFile.write("\n")
+
+            txtFile.write("Input Trackline  : " + str(tracklines) + "\n")
+            txtFile.write("Swath Angle      : " + str(swathAng) + "\n")
+            txtFile.write("\n")
+
+            txtFile.close()
+
              
             import random
             alphabet = 'ZYXWVUTSRQPONMLKJIHGFEDCBA0987654321'
@@ -221,7 +236,7 @@ class EstimateCoverage:
             'DISSOLVE':True,'OUTPUT':outStencil})
             
             fname = os.path.dirname(str(outStencil))
-            vlayer = QgsVectorLayer(str(outStencil), str(outStencil[len(fname)+1:]), "ogr")
+            vlayer = QgsVectorLayer(str(outStencil), str(outStencil[len(fname)+1:-4]), "ogr")
             QgsProject.instance().addMapLayer(vlayer)
       
             try:

@@ -470,7 +470,7 @@ class CSV2Grid_dialog(csv2grid_dialog, Ui_CSV2Grid_form):
             self.remove_temp_files(tempfile0)
             
             fname = os.path.dirname(str(output_file_grid))
-            vlayer = QgsRasterLayer(str(output_file_grid), str(output_file_grid[len(fname)+1:]))
+            vlayer = QgsRasterLayer(str(output_file_grid), str(output_file_grid[len(fname)+1:-4]))
             QgsProject.instance().addMapLayer(vlayer)
 
         if status_callback:
