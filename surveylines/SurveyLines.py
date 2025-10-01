@@ -198,6 +198,7 @@ class SurveyLines:
             currentText = selfMT.dlg.comboBox.currentText()
             layers = QgsProject.instance().mapLayers().values()
             a=0
+            filename="NULL"
             for layer in (layer1 for layer1 in layers if str(layer1.type())== "0" or str(layer1.type())== "LayerType.Vector"):
                 if a == selectedLayerIndex:
                     filename = str(layer.source())
@@ -206,7 +207,14 @@ class SurveyLines:
                 filename = currentText
 
             surveyedPolygon = filename 
-           
+            
+            # Test input file to find if supported 
+            from marinetools.fileTest import fileTest
+            surveyedPolygon = fileTest.main(surveyedPolygon,"vector")
+            if str(surveyedPolygon[0:5]) == "Error":
+                print(surveyedPolygon)
+                return
+
             azimuth = self.dlg.lineEdit_2.text()  
             spacing = self.dlg.lineEdit_3.text()          
             outputWayPoints = self.dlg.lineEdit_4.text() 
@@ -216,6 +224,19 @@ class SurveyLines:
             if os.path.exists(outputSurveyLines):
                 os.remove(outputSurveyLines)
                       
+            #Print file report
+            txtFile = open(str(outputSurveyLines[:-4]) + "_Info.txt", "w")
+            txtFile.write("Script: MBES segmentation" "\n")
+            txtFile.write("\n")
+            txtFile.write("Waypoints File Name : " + str(outputWayPoints) + "\n")
+            txtFile.write("Lines File Name     : " + str(outputSurveyLines) + "\n")
+            txtFile.write("Input polygon       : " + os.path.basename(surveyedPolygon) + "\n")
+            txtFile.write("\n")
+
+            txtFile.write("Azimuth of Lines: " + str(azimuth) + "\n")
+            txtFile.write("Line spacing    : " + str(spacing) + "\n")
+            txtFile.write("\n")
+
             #make shapes not convex
             if not self.dlg.concaveBox.isChecked():
                 result = processing.run("qgis:minimumboundinggeometry", {'INPUT':surveyedPolygon,'FIELD':'','TYPE':3,'OUTPUT':'TEMPORARY_OUTPUT'})
@@ -244,7 +265,26 @@ class SurveyLines:
                 buffer = 0.01
             else:
                 buffer = float(spacing)/(-2.0)
-            print(buffer)
+
+            if self.dlg.outsideBox.isChecked():
+                txtFile.write("Outside the box coverage was selected.\n")
+            else:
+                txtFile.write("Outside the box coverage was not selected.\n")
+            if self.dlg.farEndBox.isChecked():
+                txtFile.write("Starting at the far end was selected.\n")
+            else:
+                txtFile.write("Starting at the far end was not selected.\n")
+            if self.dlg.reverseBox.isChecked():
+                txtFile.write("Reversing the order of points was selected.\n")
+            else:
+                txtFile.write("Reversing the order of points was not selected.\n")
+            if self.dlg.concaveBox.isChecked():
+                txtFile.write("Allowance of concave box was selected.\n")
+            else:
+                txtFile.write("Allowance of concave box was not selected.\n")
+
+            txtFile.close()
+
             #Make buffers around the polygon
             result = processing.run("native:buffer", {'INPUT':layer,'DISTANCE': buffer,'SEGMENTS':5,'END_CAP_STYLE':0,'JOIN_STYLE':0,'MITER_LIMIT':2,'DISSOLVE':False,'OUTPUT':'TEMPORARY_OUTPUT'})
             bufferLayer = result['OUTPUT']
@@ -335,9 +375,9 @@ class SurveyLines:
             
             result = processing.run("native:fieldcalculator", {'INPUT':latMinResult,'FIELD_NAME':'tempOrdering','FIELD_TYPE':1,'FIELD_LENGTH':0,'FIELD_PRECISION':0,'FORMULA':'CASE\r\nWHEN "Ident"%4 =0 THEN "Ident"-1\r\nWHEN "Ident"%4 =3 THEN "Ident"+1\r\nELSE "Ident"\r\nEND','OUTPUT':'TEMPORARY_OUTPUT'})
             swapped = result['OUTPUT']
-    
+
             if self.dlg.reverseBox.isChecked():
-                result = processing.run("native:fieldcalculator", {'INPUT':swapped,'FIELD_NAME':'order','FIELD_TYPE':1,'FIELD_LENGTH':0,'FIELD_PRECISION':0,'FORMULA':'1000 - "tempOrdering"','OUTPUT':'TEMPORARY_OUTPUT'})
+                result = processing.run("native:fieldcalculator", {'INPUT':swapped,'FIELD_NAME':'order','FIELD_TYPE':0,'FIELD_LENGTH':0,'FIELD_PRECISION':0,'FORMULA':' if(  "tempOrdering" % 2 = 0,"tempOrdering"-1,"tempOrdering"+1)','OUTPUT':'TEMPORARY_OUTPUT'})
                 swapped = result['OUTPUT']
             else:
                 result = processing.run("native:fieldcalculator", {'INPUT':swapped,'FIELD_NAME':'order','FIELD_TYPE':1,'FIELD_LENGTH':0,'FIELD_PRECISION':0,'FORMULA':'"tempOrdering"','OUTPUT':'TEMPORARY_OUTPUT'})
@@ -348,10 +388,10 @@ class SurveyLines:
             processing.run("native:pointstopath", {'INPUT':outputWayPoints,'CLOSE_PATH':False,'ORDER_EXPRESSION':'order','NATURAL_SORT':False,'GROUP_EXPRESSION':'','OUTPUT':outputSurveyLines})
 
             fname = os.path.dirname(str(outputSurveyLines))
-            vlayer = QgsVectorLayer(str(outputSurveyLines), str(outputSurveyLines[len(fname)+1:]), "ogr")
+            vlayer = QgsVectorLayer(str(outputSurveyLines), str(outputSurveyLines[len(fname)+1:-4]), "ogr")
             QgsProject.instance().addMapLayer(vlayer)
             
             fname = os.path.dirname(str(outputWayPoints))
-            vlayer = QgsVectorLayer(str(outputWayPoints), str(outputWayPoints[len(fname)+1:]), "ogr")
+            vlayer = QgsVectorLayer(str(outputWayPoints), str(outputWayPoints[len(fname)+1:-4]), "ogr")
             QgsProject.instance().addMapLayer(vlayer)
       

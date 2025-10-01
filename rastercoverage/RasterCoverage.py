@@ -160,6 +160,7 @@ class RasterCoverage:
             currentText = selfMT.dlg.comboBox.currentText()
             layers = QgsProject.instance().mapLayers().values()
             a=0
+            filename="NULL"
             for layer in (layer1 for layer1 in layers if str(layer1.type())== "1"):
                 if a == selectedLayerIndex:
                     filename = str(layer.source())
@@ -181,24 +182,32 @@ class RasterCoverage:
             
             #take the file and make it usable by raster calculator
             tempName = os.path.split(filename1)[1]
-            name = tempName.split('.')[0]
+            if tempName.count('.') > 1:
+                name = tempName[:-4]
+            else:
+                name = tempName.split('.')[0]
             layerRef = name + '@1'
-
-            expr = '"'+ layerRef + '" * 0 + 1'
+            # change to 0.0 and 1.0
+            
+            expr = '"'+ layerRef + '" * 0.0 + 1.0'
             infile = QgsRasterLayer(filename1)
             crs = infile.crs()
             extent = infile.extent()
-            result = processing.run("native:rastercalc", {'LAYERS':filename1,'EXPRESSION':expr,'EXTENT':None,
-                                                 'CELL_SIZE':None,'CRS':None,'OUTPUT':'TEMPORARY_OUTPUT'})
+            print("Expression = "+str(expr))
+
+            result = processing.run("native:rastercalc", {'LAYERS':filename1,'EXPRESSION':expr,'EXTENT':extent,
+                                                 'CELL_SIZE':None,'CRS':crs,'OUTPUT':'TEMPORARY_OUTPUT'})
             polyCov = result['OUTPUT']
             result = processing.run("gdal:polygonize", {'INPUT':polyCov,'BAND':1,'FIELD':'DN',
                                                         'EIGHT_CONNECTEDNESS':False,'EXTRA':'',
-                                                        'OUTPUT':filename4})
-
+                                                        'OUTPUT':'TEMPORARY_OUTPUT'})
+            delHole = result['OUTPUT']
+            result = processing.run("native:deleteholes", {'INPUT':delHole,'MIN_AREA':0,'OUTPUT':filename4})
+            
             self.loading_screen.stop_animation()
             
             fname = os.path.dirname(str(filename4))
-            vlayer = QgsVectorLayer(str(filename4), str(filename4[len(fname)+1:]), "ogr")
+            vlayer = QgsVectorLayer(str(filename4), str(filename4[len(fname)+1:-4]), "ogr")
             QgsProject.instance().addMapLayer(vlayer)
             
             pass

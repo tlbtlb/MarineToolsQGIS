@@ -207,6 +207,7 @@ class MBESseg:
             currentText = selfMT.dlg.mapFileBathyCombo.currentText()
             layers = QgsProject.instance().mapLayers().values()
             a=0
+            filename="NULL"
             for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
                 if a == selectedLayerIndex:
                     filename = str(layer.source())
@@ -214,6 +215,13 @@ class MBESseg:
             if currentText not in filename:
                 filename = currentText
             InputBathy = filename
+            
+            # Test input file to find if supported 
+            from marinetools.fileTest import fileTest
+            InputBathy = fileTest.main(InputBathy,"raster")
+            if InputBathy[0:5] == "Error":
+                print(InputBathy)
+                return
 
             selectedLayerIndex = self.dlg.mapFileBacksCombo.currentIndex()
             currentText = selfMT.dlg.mapFileBacksCombo.currentText()
@@ -226,6 +234,14 @@ class MBESseg:
                 filename2 = currentText
             #InputBacks = layers[selectedLayerIndex].layer()
             InputBacks = filename2
+            
+            # Test input file to find if supported 
+            from marinetools.fileTest import fileTest
+            InputBacks = fileTest.main(InputBacks,"raster")
+            if InputBacks[0:5] == "Error":
+                print(InputBacks)
+                return
+
 
             clusters = self.dlg.Clusters.text()
             MinSize = self.dlg.MinimumSize.text()
@@ -270,6 +286,19 @@ class MBESseg:
             print(str(clusters))
             print(str(MinSize))
             print(str(OutputFilename))
+            #Print file report
+            txtFile = open(str(OutputFilename[:-4]) + "_Info.txt", "w")
+            txtFile.write("Script: MBES segmentation" "\n")
+            txtFile.write("\n")
+            txtFile.write("File Name: " + str(OutputFilename) + "\n")
+            txtFile.write("Input DEM: " + os.path.basename(InputBathy) + "\n")
+            txtFile.write("\n")
+
+            txtFile.write("Number of clusters: " + str(clusters) + "\n")
+            txtFile.write("Minimum Size      : " + str(MinSize) + "\n")
+            txtFile.write("\n")
+
+            txtFile.close()
             
             plugin_dir = os.path.dirname(__file__)
             gif_path = os.path.join(plugin_dir, "loading.gif")
@@ -330,7 +359,7 @@ class MBESseg:
             self.loading_screen.stop_animation()
             
             fname = os.path.dirname(str(OutputFilename))
-            vlayer = QgsVectorLayer(str(OutputFilename), str(OutputFilename[len(fname)+1:]), "ogr")
+            vlayer = QgsVectorLayer(str(OutputFilename), str(OutputFilename[len(fname)+1:-4]), "ogr")
             QgsProject.instance().addMapLayer(vlayer)
             colour_polygons_random(vlayer)
             

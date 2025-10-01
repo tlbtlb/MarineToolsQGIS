@@ -253,7 +253,10 @@ class randomForest:
                 result = processing.run("gdal:cliprasterbyextent", {'INPUT':raster,'PROJWIN':exasAll,'OVERCRS':False,'NODATA':None,'OPTIONS':'','DATA_TYPE':0,'EXTRA':'','OUTPUT':'TEMPORARY_OUTPUT'})
                 raster = result['OUTPUT']
                 baseName = os.path.basename(inRS)
-                name = baseName.split('.')[0]
+                if baseName.count('.') > 1:
+                    name = baseName[:-4]
+                else:
+                    name = baseName.split('.')[0]
                 tableNames.append(name + "_" + str(x))    
             
             #If not all of the points are to be used, the presence file is clipped according to the extent of the subset
@@ -585,7 +588,7 @@ class randomForest:
             f.close()
 
             fname = os.path.dirname(str(predictionOutput))
-            vlayer = QgsRasterLayer(str(predictionOutput), str(predictionOutput[len(fname)+1:]))
+            vlayer = QgsRasterLayer(str(predictionOutput), str(predictionOutput[len(fname)+1:-4]))
             QgsProject.instance().addMapLayer(vlayer)
 
             if deleteIntermediate:

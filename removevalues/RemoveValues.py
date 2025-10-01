@@ -146,7 +146,10 @@ class RemoveValues:
 
         #take the file and make it usable by raster calculator
         tempName = os.path.split(inFile)[1]
-        name = tempName.split('.')[0]
+        if tempName.count('.') > 1:
+            name = tempName[:-4]
+        else:
+            name = tempName.split('.')[0]
         layerRef = name + '@1'
         
         #Form the expression
@@ -169,7 +172,10 @@ class RemoveValues:
   
         #take the file and make it usable by raster calculator
         tempName = os.path.split(inFile)[1]
-        name = tempName.split('.')[0]
+        if tempName.count('.') > 1:
+            name = tempName[:-4]
+        else:
+            name = tempName.split('.')[0]
         layerRef = name + '@1'
         
         #Form the expression
@@ -195,19 +201,22 @@ class RemoveValues:
 
         #take the file and make it usable by raster calculator
         tempName = os.path.split(inFile)[1]
-        name = tempName.split('.')[0]
+        if tempName.count('.') > 1:
+            name = tempName[:-4] # remove file extension as filename has extra "." - hopefully just 3 letters
+        else:
+            name = tempName.split('.')[0]
         layerRef = name + '@1'
 
         #Form the expression
         bool = '("'+ layerRef + '"<= ' + start + ') OR ("'+ layerRef + '">= ' + end + ')'
         expr = '(0/(' + bool + ')) + "'+ layerRef + '"'
-        #print(bool)
-        #print(expr)
-         #Calculate the new raster 
+        print(bool)
+        print(expr)
+        #Calculate the new raster 
         infile = QgsRasterLayer(inFile)
         crs = infile.crs()
         extent = infile.extent()
-        processing.run("qgis:rastercalculator", {'EXPRESSION':expr,'LAYERS':[inFile],'CELLSIZE':None,'EXTENT':extent,'CRS':crs,'OUTPUT':outFile})
+        processing.run("native:rastercalc", {'EXPRESSION':expr,'LAYERS':[inFile],'CELL_SIZE':None,'EXTENT':extent,'CRS':crs,'OUTPUT':outFile})
     
     def run(self):
         """Run method that performs all the real work"""
@@ -241,6 +250,7 @@ class RemoveValues:
             currentText = selfMT.dlg.inputCombo.currentText()
             layers = QgsProject.instance().mapLayers().values()
             a=0
+            filename="NULL"
             for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
                 if a == selectedLayerIndex:
                     filename = str(layer.source())
@@ -276,5 +286,5 @@ class RemoveValues:
                 
             if os.path.exists(outFile):
                 fname = os.path.dirname(str(outFile))
-                vlayer = QgsRasterLayer(str(outFile), str(outFile[len(fname)+1:]))
+                vlayer = QgsRasterLayer(str(outFile), str(outFile[len(fname)+1:-4]))
                 QgsProject.instance().addMapLayer(vlayer)

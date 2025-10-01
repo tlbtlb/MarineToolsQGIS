@@ -219,6 +219,7 @@ class OBIA:
             selectedLayerIndex = self.dlg.comboBox1.currentIndex()
             currentText = selfMT.dlg.comboBox1.currentText()
             layers = QgsProject.instance().mapLayers().values()
+            filename="NULL"
             a=0
             for layer in (layer1 for layer1 in layers if str(layer1.type())== "1" or str(layer1.type())== "LayerType.Raster"):
                 if a == selectedLayerIndex:
@@ -227,6 +228,13 @@ class OBIA:
             if currentText not in filename:
                 filename = currentText
             filename1a = filename
+            
+            # Test input file to find if supported 
+            from marinetools.fileTest import fileTest
+            filename1a = fileTest.main(filename1a,"raster")
+            if filename1a[0:5] == "Error":
+                print(filename1a)
+                return
             
             selectedLayerIndex = self.dlg.comboBox2.currentIndex()
             currentText = selfMT.dlg.comboBox2.currentText()
@@ -239,6 +247,13 @@ class OBIA:
             if currentText not in filename:
                 filename = currentText
             filename2a = filename
+            
+            # Test input file to find if supported 
+            from marinetools.fileTest import fileTest
+            filename2a = fileTest.main(filename2a,"raster")
+            if filename2a[0:5] == "Error":
+                print(filename2a)
+                return
 
             selectedLayerIndex = self.dlg.comboBox3.currentIndex()
             currentText = selfMT.dlg.comboBox3.currentText()
@@ -321,6 +336,18 @@ class OBIA:
             filename3 = ""
             filename4 = ""
             filename5 = ""
+            #Print file report
+            txtFile = open(str(OutputFilename[:-4]) + "_Info.txt", "w")
+            txtFile.write("Script: Object Based Image Analysis (OBIA)" "\n")
+            txtFile.write("\n")
+            txtFile.write("File Name : " + str(OutputFilename) + "\n")
+            txtFile.write("\n")
+
+            txtFile.write("Number of clusters: " + str(clusters) + "\n")
+            txtFile.write("Minimum Size      : " + str(MinSize) + "\n")
+            txtFile.write("\n")
+
+
             
             filename1 = newdir + "/tmpFile1_"+rand+".img"
             file1layer = QgsRasterLayer(filename1a,"file1")
@@ -335,6 +362,8 @@ class OBIA:
             file2Min = file2Stats.minimumValue
             file2Max = file2Stats.maximumValue
             processing.run("grass7:r.rescale.eq", {'input':filename2a,'from':[file2Min,file2Max],'to':[0,254],'output':filename2,'GRASS_REGION_PARAMETER':None,'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
+            txtFile.write("Input layer1: " + os.path.basename(filename1a) + "\n")
+            txtFile.write("Input layer2: " + os.path.basename(filename2a) + "\n")
 
             if filename3a != "":
                 filename3 = newdir + "/tmpFile3_"+rand+".img"
@@ -343,6 +372,7 @@ class OBIA:
                 file3Min = file3Stats.minimumValue
                 file3Max = file3Stats.maximumValue
                 processing.run("grass7:r.rescale.eq", {'input':filename3a,'from':[file3Min,file3Max],'to':[0,254],'output':filename3,'GRASS_REGION_PARAMETER':None,'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
+                txtFile.write("Input layer3: " + os.path.basename(filename3a) + "\n")
             else: # make a 0 file (or null)
                 filename3 = newdir + "/tmpFile3"+rand+".img"
                 processing.run("gdal:rastercalculator", {'INPUT_A':filename1a,'BAND_A':1,'FORMULA':'A*(0.0)','OUTPUT':filename3})
@@ -354,6 +384,7 @@ class OBIA:
                 file4Min = file4Stats.minimumValue
                 file4Max = file4Stats.maximumValue
                 processing.run("grass7:r.rescale.eq", {'input':filename4a,'from':[file4Min,file4Max],'to':[0,254],'output':filename4,'GRASS_REGION_PARAMETER':None,'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
+                txtFile.write("Input layer4: " + os.path.basename(filename4a) + "\n")
           
             if filename5a != "":
                 filename5 = newdir + "/tmpFile5_"+rand+".img"
@@ -362,6 +393,8 @@ class OBIA:
                 file5Min = file5Stats.minimumValue
                 file5Max = file5Stats.maximumValue
                 processing.run("grass7:r.rescale.eq", {'input':filename5a,'from':[file5Min,file5Max],'to':[0,254],'output':filename5,'GRASS_REGION_PARAMETER':None,'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
+                txtFile.write("Input layer5: " + os.path.basename(filename5a) + "\n")
+            txtFile.close()
             InputRas = newdir + "/GRMbuildvirtualraster"+rand+".vrt"
             if filename5 != "":
                 processing.run("gdal:buildvirtualraster", {'INPUT':[filename1,filename2,filename3,filename4,filename5],'RESOLUTION':0,'SEPARATE':True,'PROJ_DIFFERENCE':False,'ADD_ALPHA':False,'ASSIGN_CRS':None,'RESAMPLING':0,'SRC_NODATA':'','EXTRA':'','OUTPUT':InputRas})
@@ -469,7 +502,7 @@ class OBIA:
             #remove_temp_files(temp5d) #
             #remove_temp_files(temp5e) #
             fname = os.path.dirname(str(OutputFilename))
-            vlayer = QgsVectorLayer(str(OutputFilename), str(OutputFilename[len(fname)+1:]), "ogr")
+            vlayer = QgsVectorLayer(str(OutputFilename), str(OutputFilename[len(fname)+1:-4]), "ogr")
             QgsProject.instance().addMapLayer(vlayer)
             colour_polygons_random(vlayer)
 
