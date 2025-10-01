@@ -68,6 +68,11 @@ class MarineTools:
         self.actionBathyMorph.triggered.connect( self.BathyMorph1 )
         self.Bathymetry_menu.addAction( self.actionBathyMorph )
 
+        icon = QIcon(os.path.dirname(__file__) + "/icons/TreeRemoval.png")
+        self.actionTreeRemoval = QAction(icon, 'Tree Removal (median filter)',  self.iface.mainWindow() )
+        self.actionTreeRemoval.triggered.connect( self.TreeRemoval1 )
+        self.Bathymetry_menu.addAction( self.actionTreeRemoval )
+
         # Interpretation submenu
         self.Interpretation_menu = QMenu(u'Interpretation')
         icon = QIcon(os.path.dirname(__file__) + "/icons/Interpretation.png")
@@ -78,6 +83,11 @@ class MarineTools:
         self.actionBTM.triggered.connect( self.BTM1 ) # Link to def below
         self.Interpretation_menu.addAction( self.actionBTM )
 
+        icon = QIcon(plugin_dir+"/icons/CoMMa.png")
+        self.actionCoMMaDelin = QAction(icon, 'CoMMa delineation',  self.iface.mainWindow() )
+        self.actionCoMMaDelin.triggered.connect( self.CoMMaDelin1 )
+        self.Interpretation_menu.addAction( self.actionCoMMaDelin )
+        
         icon = QIcon(plugin_dir+"/icons/MBESseg.png")
         self.actionMBESseg = QAction(icon, 'MBES segmentation',  self.iface.mainWindow() )
         self.actionMBESseg.triggered.connect( self.MBESseg1 )
@@ -151,6 +161,12 @@ class MarineTools:
         self.first_start = True
         BTM.BTM.run(self)
 
+    def CoMMaDelin1(self):
+        from marinetools.CoMMaDelin.CoMMaDelin_dialog import CoMMaDelinDialog
+        from marinetools.CoMMaDelin import CoMMaDelin
+        self.first_start = True
+        CoMMaDelin.CoMMaDelin.run(self)
+        
     def CSV2Grid1(self):
         from marinetools.CSV2Grid.CSV2Grid import CSV2Grid_dialog
         #dialog = CSV2Grid_dialog(self.iface)
@@ -205,4 +221,10 @@ class MarineTools:
         from marinetools.surveylines import SurveyLines
         self.first_start = True
         SurveyLines.SurveyLines.run(self)
+
+    def TreeRemoval1(self):
+        from marinetools.treeremoval.TreeRemoval_dialog import TreeRemovalDialog
+        from marinetools.treeremoval import TreeRemoval
+        self.first_start = True
+        TreeRemoval.TreeRemoval.run(self)
 
