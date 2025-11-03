@@ -134,6 +134,11 @@ class MarineTools:
         self.CSV2Grid_action.triggered.connect(self.CSV2Grid1)
         self.Utilities_menu.addAction(self.CSV2Grid_action)
 
+        icon = QIcon(plugin_dir+"/icons/layerlist.png")
+        self.actionLayerList = QAction(icon, 'Layer Listing',  self.iface.mainWindow() )
+        self.actionLayerList.triggered.connect(self.LayerList1)
+        self.Utilities_menu.addAction( self.actionLayerList )
+         
         # Single Menu - reminder if needed
         """menuBar = self.iface.mainWindow().menuBar()
         surveyDesignMenu = QMenu( QCoreApplication.translate("MarineTools","MarineTools") ,  menuBar)
@@ -185,6 +190,12 @@ class MarineTools:
         from marinetools.GLCM import GLCM
         self.first_start = True
         GLCM.GLCM.run(self)
+        
+    def LayerList1(self):
+        from marinetools.layerlist.LayerList_dialog import LayerListDialog
+        from marinetools.layerlist import LayerList
+        self.first_start = True
+        LayerList.LayerList.run(self)
         
     def MBESseg1(self):
         from marinetools.MBESseg.MBESseg_dialog import MBESsegDialog
